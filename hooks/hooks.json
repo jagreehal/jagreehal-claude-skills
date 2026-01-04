@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -f package.json ] && [ -f tsconfig.json ]; then (npm run type-check 2>&1 || true) | head -30; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [ -f package.json ] && ([ -f eslint.config.mjs ] || [ -f .eslintrc.js ] || [ -f .eslintrc.json ] || [ -f eslint.config.js ]); then (npm run lint 2>&1 || true) | head -30; fi"
+          },
+          {
+            "type": "command",
+            "command": "if [ -f package.json ] && (grep -q '\"test\"' package.json || grep -q '\"test:' package.json); then (npm run test 2>&1 || true) | head -40; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

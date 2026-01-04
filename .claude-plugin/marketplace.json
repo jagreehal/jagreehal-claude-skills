@@ -1,0 +1,29 @@
+{
+  "name": "jagreehal-marketplace",
+  "owner": {
+    "name": "Jag Reehal"
+  },
+  "metadata": {
+    "description": "TypeScript patterns and skills for production-grade AI-assisted development",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "jagreehal-claude-skills",
+      "source": ".",
+      "description": "Opinionated TypeScript patterns: fn(args, deps), Result types, Zod validation, and more",
+      "version": "1.3.0",
+      "license": "MIT",
+      "keywords": [
+        "typescript",
+        "patterns",
+        "testing",
+        "dependency-injection",
+        "result-types",
+        "zod",
+        "architecture"
+      ],
+      "category": "development"
+    }
+  ]
+}
