@@ -10,9 +10,9 @@
   "plugins": [
     {
       "name": "jagreehal-claude-skills",
-      "source": ".",
+      "source": "./",
       "description": "Opinionated TypeScript patterns: fn(args, deps), Result types, Zod validation, and more",
-      "version": "1.3.0",
+      "version": "1.3.2",
       "license": "MIT",
       "keywords": [
         "typescript",

@@ -300,3 +300,4 @@ This command is a comprehensive version of `/verify-patterns`:
 - `/verify-patterns` - Quick check, shows summary
 - `/full-review` - Deep analysis, generates detailed report, handles large codebases
 
+
