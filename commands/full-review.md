@@ -301,3 +301,4 @@ This command is a comprehensive version of `/verify-patterns`:
 - `/full-review` - Deep analysis, generates detailed report, handles large codebases
 
 
+

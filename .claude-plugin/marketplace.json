@@ -12,7 +12,7 @@
       "name": "jagreehal-claude-skills",
       "source": "./",
       "description": "Opinionated TypeScript patterns: fn(args, deps), Result types, Zod validation, and more",
-      "version": "1.3.2",
+      "version": "1.3.3",
       "license": "MIT",
       "keywords": [
         "typescript",
