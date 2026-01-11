@@ -177,6 +177,61 @@ function createCorrelatedLogger() {
 }
 ```
 
+### 8. Emit Canonical Log Lines (Wide Events)
+
+Traditional logging is **optimized for writing, not querying**. Canonical log lines emit ONE log per request with ALL context:
+
+```typescript
+init({
+  service: 'checkout-api',
+  logger,
+  canonicalLogLines: {
+    enabled: true,
+    rootSpansOnly: true, // One log per request
+    logger,
+  },
+});
+```
+
+Accumulate context throughout the request:
+
+```typescript
+const processCheckout = trace((ctx) => async (req: CheckoutRequest) => {
+  setUser(ctx, { id: req.userId });
+  ctx.setAttributes({
+    'user.subscription': user.subscription,
+    'cart.id': req.cartId,
+    'cart.item_count': items.length,
+    'payment.method': req.paymentMethod,
+  });
+
+  // On error, add error context
+  if (paymentFailed) {
+    ctx.setAttributes({
+      'error.type': 'PaymentError',
+      'error.code': 'card_declined',
+    });
+  }
+
+  // ONE canonical log emitted at span end with ALL attributes
+  return result;
+});
+```
+
+**Result:** Query logs like a database:
+
+```sql
+SELECT * FROM logs
+WHERE user.subscription = 'premium'
+  AND error.code IS NOT NULL;
+```
+
+Key characteristics:
+- **High cardinality**: user IDs, order IDs enable precise queries
+- **Flat structure**: Use dot-notation (`user.id`, `cart.total_cents`)
+- **Emitted at span end**: All context available
+- **One per request**: `rootSpansOnly: true`
+
 ## Quick Setup
 
 ```bash
@@ -268,5 +323,6 @@ const result = await myFunction(args, mockDeps);
 2. **Wrap with trace()** - Observability orthogonal to business logic
 3. **Use semantic conventions** - Standard attribute names
 4. **Correlate logs and traces** - Include traceId/spanId
-5. **Map Result to span status** - ok = success, err = failure
-6. **Tests don't change** - trace() is transparent
+5. **Emit canonical log lines** - One wide event per request with all context
+6. **Map Result to span status** - ok = success, err = failure
+7. **Tests don't change** - trace() is transparent

@@ -46,21 +46,45 @@ Add to your `.claude/settings.local.json`:
 | `observability` | `trace()` wrapper, Pino logging, OpenTelemetry |
 | `resilience` | Retry/timeout at workflow level, not in functions |
 | `config-management` | Validate config at startup, secrets in memory only |
-| `strict-typescript` | Beyond `strict: true` - noUncheckedIndexedAccess, ts-reset |
+| `api-design` | Production-ready HTTP APIs with clean handlers, error envelopes, health checks |
+| `strict-typescript` | Beyond `strict: true` - advanced types, ESLint enforcement |
 | `pattern-enforcement` | ESLint rules that fail the build |
 | `testing-strategy` | Test pyramid with vitest-mock-extended |
+| `writing-tests` | Test naming, assertions, edge case checklists (BugMagnet-based) |
 | `performance-testing` | Load testing, chaos engineering, trace correlation |
+| `react-development` | Modern React patterns, technology stack, accessibility |
+| `storybook-journeys` | Storybook user journey storyboards with MSW API mocking and interactions |
 
 ### Behavioral (Workflow)
 
 | Skill | Description |
 |-------|-------------|
-| `critical-peer` | Professional skepticism, concise output, research first, answer questions literally |
+| `critical-peer` | Professional skepticism, concise output, research first |
 | `tdd-workflow` | Red-green-refactor with Result type testing |
 | `session-continuity` | Persist tasks across sessions with `.claude/` files |
-| `design-principles` | Fail-fast, no `any`, domain naming, YAGNI |
-| `debugging-methodology` | Evidence-based debugging with instrumentation before guessing |
-| `code-flow-analysis` | Trace execution paths before implementing - forces understanding of fn(args, deps) flows and Result types |
+| `design-principles` | Fail-fast, no `any`, domain naming, YAGNI, 8-dimension analysis |
+| `debugging-methodology` | Evidence-based debugging with instrumentation |
+| `code-flow-analysis` | Trace execution paths before implementing |
+
+### Communication & Research
+
+| Skill | Description |
+|-------|-------------|
+| `research-first` | Validate solutions before presenting, never ask lazy questions |
+| `confidence-levels` | Express confidence as %, explain gaps, show evidence |
+| `concise-output` | Maximum information density, eliminate filler phrases |
+| `literal-answers` | Answer questions literally, don't interpret as instructions |
+
+### Domain Skills
+
+| Skill | Description |
+|-------|-------------|
+| `documentation-standards` | 8 quality dimensions, user-centered documentation |
+| `system-architecture` | Trade-off analysis, ADRs, pattern selection |
+| `investigation-modes` | LEARNING/INVESTIGATION/SOLVING with explicit transitions |
+| `ui-design-principles` | Design systems, implementation-ready interfaces |
+| `structured-writing` | Voice preservation, gap identification |
+| `data-visualization` | Chart selection, encoding hierarchy, accessibility |
 
 ## Commands
 
@@ -70,12 +94,14 @@ Add to your `.claude/settings.local.json`:
 | `/verify-patterns` | Quick check for pattern violations |
 | `/full-review [--report] [--scope <path>]` | Comprehensive codebase review with detailed report |
 | `/init-project` | Set up new project with patterns |
+| `/learn-from-prs [--count <n>] [--state <state>]` | Analyze PR feedback patterns and suggest config updates |
 
 ## Agents
 
 | Agent | Description |
 |-------|-------------|
 | `pattern-checker` | Autonomous agent that scans codebase for pattern violations and generates compliance reports |
+| `task-check` | Verifies task completion with context-aware standards (POC vs production) before finishing work |
 
 ## Core Libraries
 

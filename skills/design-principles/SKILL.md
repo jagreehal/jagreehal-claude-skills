@@ -1,7 +1,7 @@
 ---
 name: design-principles
-description: "Software design beyond syntax. Fail-fast over fallbacks, explicit over implicit, composition over inheritance. Integrates with fn(args, deps) and Result type patterns."
-version: 1.0.0
+description: "Software design beyond syntax. Fail-fast over fallbacks, explicit over implicit, composition over inheritance. Integrates with fn(args, deps) and Result type patterns. Includes 8-dimension design analysis."
+version: 1.1.0
 ---
 
 # Design Principles
@@ -304,3 +304,167 @@ function process(orders: Order[]) {
 | Mutate a parameter | Return new value |
 | Build "for later" | Build what you need now |
 | Add `else` branch | Use early return |
+
+## 8-Dimension Design Analysis
+
+Use this framework for systematic code review across design dimensions.
+
+### 1. Naming
+
+| Check | Violation |
+|-------|-----------|
+| Generic words | `data`, `utils`, `helper`, `manager`, `handler` |
+| Unclear intent | `process()`, `handle()`, `doSomething()` |
+| Inconsistent | Similar concepts named differently |
+
+```typescript
+// WRONG
+class DataProcessor {
+  processData(data: any) { }
+}
+
+// CORRECT
+class OrderTotalCalculator {
+  calculate(order: Order): Money { }
+}
+```
+
+### 2. Coupling & Cohesion
+
+**Feature Envy:** Method uses >3 properties of another object.
+
+```typescript
+// WRONG - Feature Envy
+class UserProfile {
+  displaySubscription(): string {
+    return `Plan: ${this.subscription.planName}, ` +
+           `Price: $${this.subscription.monthlyPrice}`;
+  }
+}
+
+// CORRECT - Tell, Don't Ask
+class Subscription {
+  getDescription(): string {
+    return `Plan: ${this.planName}, Price: $${this.monthlyPrice}`;
+  }
+}
+
+class UserProfile {
+  displaySubscription(): string {
+    return this.subscription.getDescription();
+  }
+}
+```
+
+### 3. Immutability
+
+| Check | Violation |
+|-------|-----------|
+| `let` instead of `const` | Unnecessary mutability |
+| Missing `readonly` | Mutable class properties |
+| Array mutation | `push()`, `pop()`, `splice()` |
+
+### 4. Domain Integrity
+
+**Anemic Domain Model:** Entities with only getters/setters, logic in services.
+
+```typescript
+// WRONG - Anemic + Tell Don't Ask violation
+class PlaceOrderUseCase {
+  placeOrder(orderId: string) {
+    const order = repository.load(orderId);
+    if (order.getStatus() === 'DRAFT') {  // Asking, not telling
+      order.place();
+    }
+  }
+}
+
+// CORRECT - Rich Domain
+class Order {
+  place() {
+    if (this.status !== 'DRAFT') {
+      throw new Error('Cannot place order not in draft');
+    }
+    this.status = 'PLACED';
+  }
+}
+
+class PlaceOrderUseCase {
+  placeOrder(orderId: string) {
+    const order = repository.load(orderId);
+    order.place();  // Telling, order enforces invariant
+  }
+}
+```
+
+### 5. Type System
+
+| Check | Violation |
+|-------|-----------|
+| `any` keyword | Type safety abandoned |
+| `as` assertions | Lying to compiler |
+| Primitive obsession | `string` for domain concepts |
+| Stringly-typed | `status: string` instead of union |
+
+```typescript
+// WRONG
+status: string;
+
+// CORRECT
+type OrderStatus = 'pending' | 'confirmed' | 'shipped';
+status: OrderStatus;
+```
+
+### 6. Simplicity
+
+| Check | Violation |
+|-------|-----------|
+| Dead code | Unused imports, methods |
+| Duplication | >3 lines repeated |
+| Over-abstraction | Interface with single implementation |
+| YAGNI | Building for hypothetical needs |
+
+### 7. Object Calisthenics
+
+| Rule | Check |
+|------|-------|
+| One indentation level | >1 level nesting = violation |
+| No ELSE keyword | Use early return |
+| Small entities | Methods <20 lines, files <200 lines |
+
+### 8. Performance
+
+Only flag if:
+1. Evidence of actual inefficiency
+2. Improvement is significant
+3. Fix doesn't harm readability
+
+```typescript
+// WRONG - O(n²)
+items.forEach(item => {
+  const cat = categories.find(c => c.id === item.categoryId);
+});
+
+// CORRECT - O(n)
+const categoryMap = new Map(categories.map(c => [c.id, c]));
+items.forEach(item => {
+  const cat = categoryMap.get(item.categoryId);
+});
+```
+
+## Design Analysis Output Format
+
+When reviewing code, report findings as:
+
+```markdown
+## 🔴 Critical Issues
+
+### [Dimension] - [Brief Description]
+**Location:** file.ts:line
+**Issue:** [What's wrong]
+**Recommendation:** [Specific fix]
+
+## 🟡 Suggestions
+
+[Same format]
+```

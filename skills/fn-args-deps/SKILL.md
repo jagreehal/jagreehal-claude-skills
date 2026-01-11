@@ -102,7 +102,54 @@ const userService = createUserService({ deps });
 await userService.getUser({ userId: '123' });
 ```
 
-### 4. Inject Only What You'll Mock
+### 4. Grouping Related Functions
+
+When you have many related functions (5+), choose one approach per module:
+
+**Approach 1: Inject Individually (default)**
+
+Use when most consumers only need 1–2 functions:
+
+```typescript
+// user-functions.ts
+export async function getUser(args: { userId: string }, deps: GetUserDeps) { ... }
+export async function createUser(args: { name: string; email: string }, deps: CreateUserDeps) { ... }
+
+export type GetUserFn = typeof getUser;
+export type CreateUserFn = typeof createUser;
+
+// notification-handler.ts — only needs sendWelcomeEmail
+export type NotificationHandlerDeps = {
+  sendWelcomeEmail: SendWelcomeEmailFn;
+  // doesn't need getUser or createUser
+};
+```
+
+**Approach 2: Inject as Grouped Object (when they travel together)**
+
+Use when functions form a cohesive module and consumers inject the same set:
+
+```typescript
+// user-functions.ts
+export const userFns = {
+  getUser,
+  createUser,
+  updateUser,
+  deleteUser,
+  sendWelcomeEmail,
+} as const;
+
+export type UserFns = typeof userFns;
+
+// user-router.ts — needs most user functions
+export type UserRouterDeps = {
+  userFns: UserFns;
+};
+```
+
+**Rule of thumb:** Default to injecting individually. Group only when functions genuinely travel together. If grouping feels like a "god object", split it.
+
+### 5. Inject Only What You'll Mock
 
 Only inject things that hit network, disk, or clock. Import pure utilities directly:
 
@@ -116,7 +163,7 @@ import { randomUUID } from 'crypto';
 function createUser(args, deps: { db, logger }) { }
 ```
 
-### 5. Type-Only Imports for Interfaces
+### 6. Type-Only Imports for Interfaces
 
 Use `import type` to prevent runtime coupling:
 

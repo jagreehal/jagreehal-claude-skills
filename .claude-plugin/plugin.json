@@ -1,6 +1,6 @@
 {
   "name": "jagreehal-claude-skills",
-  "version": "1.3.3",
+  "version": "1.5.1",
   "description": "Opinionated TypeScript patterns for AI-assisted development. Enforces fn(args, deps), Result types, Zod validation, and production-grade architecture.",
   "author": {
     "name": "Jag Reehal"
@@ -17,7 +17,7 @@
     "architecture"
   ],
   "commands": "./commands/",
-  "agents": ["./agents/pattern-checker.md"],
+  "agents": ["./agents/pattern-checker.md", "./agents/task-check.md"],
   "skills": "./skills/",
   "hooks": "./hooks/hooks.json"
 }

@@ -1,7 +1,7 @@
 ---
 name: strict-typescript
-description: "Enforce patterns with TypeScript beyond strict:true. Include noUncheckedIndexedAccess, erasableSyntaxOnly, ts-reset, and type-fest."
-version: 1.0.0
+description: "Enforce patterns with TypeScript beyond strict:true. Include noUncheckedIndexedAccess, erasableSyntaxOnly, ts-reset, and type-fest. Advanced type patterns and ESLint enforcement."
+version: 1.1.0
 libraries: ["@total-typescript/ts-reset", "type-fest"]
 ---
 
@@ -241,6 +241,163 @@ import { db } from './database';       // Runtime, keep as-is
 
 The flags we recommend aren't just about safety—they're also about performance. Stricter code is faster to compile because it's more explicit about intent.
 
+## ESLint Enforcement
+
+Ban unsafe patterns with tooling:
+
+```javascript
+// eslint.config.js
+{
+  extends: ['plugin:@typescript-eslint/strict-type-checked'],
+  rules: {
+    '@typescript-eslint/no-explicit-any': 'error',
+    '@typescript-eslint/no-unsafe-argument': 'error',
+    '@typescript-eslint/no-unsafe-assignment': 'error',
+    '@typescript-eslint/no-unsafe-call': 'error',
+    '@typescript-eslint/no-unsafe-member-access': 'error',
+    '@typescript-eslint/no-unsafe-return': 'error',
+    '@typescript-eslint/consistent-type-assertions': ['error', { assertionStyle: 'never' }],
+    '@typescript-eslint/no-non-null-assertion': 'error'
+  }
+}
+```
+
+## Type Narrowing (Never Use `as`)
+
+### WRONG - Type Assertion
+
+```typescript
+const user = data as User;  // Lying to compiler
+```
+
+### CORRECT - Type Guard
+
+```typescript
+function isUser(x: unknown): x is User {
+  return typeof x === 'object' && x !== null && 'id' in x;
+}
+
+if (isUser(data)) {
+  data.id;  // Type-safe
+}
+```
+
+### CORRECT - Discriminated Union
+
+```typescript
+type ApiResponse =
+  | { status: 'success'; data: User }
+  | { status: 'error'; message: string };
+
+function handleResponse(response: ApiResponse) {
+  if (response.status === 'success') {
+    response.data;  // User, no assertion needed
+  }
+}
+```
+
+### CORRECT - Zod Validation
+
+```typescript
+const data: unknown = JSON.parse(input);
+const user = UserSchema.parse(data);  // Throws if invalid, typed if valid
+```
+
+## Advanced Type Patterns
+
+### Branded Types
+
+Compile-time distinction between primitives:
+
+```typescript
+type UserId = string & { __brand: 'UserId' };
+type PostId = string & { __brand: 'PostId' };
+
+function getUser(id: UserId): User { }
+function getPost(id: PostId): Post { }
+
+const userId = 'abc' as UserId;
+const postId = 'xyz' as PostId;
+
+getUser(userId);  // OK
+getUser(postId);  // ERROR - Type 'PostId' is not assignable to 'UserId'
+```
+
+### Template Literal Types
+
+```typescript
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
+type Route = `/${string}`;
+type Endpoint = `${HttpMethod} ${Route}`;
+
+const endpoint: Endpoint = 'GET /users';  // OK
+const invalid: Endpoint = 'FETCH /users'; // ERROR
+```
+
+### Conditional Types
+
+```typescript
+type ApiResponse<T> = T extends Error
+  ? { success: false; error: T }
+  : { success: true; data: T };
+
+// ApiResponse<User> → { success: true; data: User }
+// ApiResponse<Error> → { success: false; error: Error }
+```
+
+### Mapped Types with Key Remapping
+
+```typescript
+type Getters<T> = {
+  [K in keyof T as `get${Capitalize<string & K>}`]: () => T[K];
+};
+
+type UserGetters = Getters<{ name: string; age: number }>;
+// { getName: () => string; getAge: () => number }
+```
+
+## Build Performance
+
+### Avoid Barrel Files
+
+```typescript
+// WRONG - Barrel file (index.ts re-exports)
+// Slows tree-shaking, creates circular dependencies
+export * from './user';
+export * from './post';
+export * from './comment';
+
+// CORRECT - Direct imports
+import { User } from './user';
+import { Post } from './post';
+```
+
+### Profile with Diagnostics
+
+```bash
+tsc --extendedDiagnostics
+```
+
+### Project References for Monorepos
+
+```json
+// tsconfig.json
+{
+  "references": [
+    { "path": "./packages/shared" },
+    { "path": "./packages/api" }
+  ]
+}
+```
+
+## Build Tools
+
+| Tool | Use For |
+|------|---------|
+| **Vite** | Modern dev server, HMR (apps) |
+| **tsup/esbuild** | Ultra-fast transpilation (libraries) |
+| **tsc** | Type checking (always, regardless of bundler) |
+
 ## The Rules
 
 1. **Enable noUncheckedIndexedAccess** - Handle missing array/object elements
@@ -250,3 +407,6 @@ The flags we recommend aren't just about safety—they're also about performance
 5. **Install ts-reset** - Fix JSON.parse and other any leaks
 6. **Use satisfies and as const** - Keep literal types, validate shapes
 7. **Install Total TypeScript extension** - Better error messages in VS Code
+8. **Never use `any` or `as`** - Type guards and Zod instead
+9. **ESLint strict-type-checked** - Enforce at build time
+10. **Avoid barrel files** - Direct imports for build performance
