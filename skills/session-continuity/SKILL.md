@@ -1,16 +1,110 @@
 ---
 name: session-continuity
-description: "Persist task state across sessions using .claude/ files. Resume work with 'continue'. Never use TodoWrite - use tasks.md, requirements.md, session.md instead."
-version: 1.0.0
+description: "Persistent task workflow with state machine. Every message MUST announce state. Uses .claude/ files for multi-session continuity. Never use TodoWrite. Never auto-advance tasks."
+version: 2.0.0
 ---
 
 # Session Continuity
 
-Persistent task management that survives session restarts.
+Persistent task workflow that survives session restarts.
+
+## CRITICAL: STATE MACHINE GOVERNANCE
+
+**EVERY SINGLE MESSAGE MUST START WITH YOUR CURRENT STATE**
+
+Format:
+```
+CHECK_STATUS
+WORKING
+VERIFY
+COMPLETE
+AWAITING_COMMIT
+MARK_COMPLETE
+BLOCKED
+```
+
+**NOT JUST THE FIRST MESSAGE. EVERY. SINGLE. MESSAGE.**
+
+When you read a file → prefix with state
+When you run tests → prefix with state
+When you explain results → prefix with state
+When you ask a question → prefix with state
+
+Example:
+```
+CHECK_STATUS
+Reading session.md...
+
+CHECK_STATUS
+Status shows "in progress". Routing to WORKING.
+
+TRANSITION: CHECK_STATUS → WORKING
+
+WORKING
+Reading requirements.md for task specs...
+
+WORKING
+Implementing getUser function with deps...
+```
+
+## State Machine
+
+```
+                     user: "continue"
+                            ↓
+                   ┌────────────────┐
+               ┌───│ CHECK_STATUS   │←──────────┬──────────┐
+               │   │ Read session.md│           │          │
+               │   └────────┬───────┘           │          │
+               │            │                   │          │
+    Status=    │            │ Status=           │          │
+    "Complete" │            │ "in progress"     │          │
+               │            │                   │          │
+               ↓            ↓                   │          │
+       ┌───────────┐  ┌──────────────┐         │          │
+       │ AWAITING_ │  │ WORKING      │←────┐   │          │
+       │ COMMIT    │  │              │     │   │          │
+       │           │  │ Read:        │     │   │          │
+       │ Ask       │  │ requirements │     │   │          │
+       │ permission│  │ tasks.md     │     │   │          │
+       │ STOP      │  └──────┬───────┘     │   │          │
+       └─────┬─────┘         │             │   │          │
+             │               │ task done   │   │          │
+   user: yes │               │             │   │          │
+             │               ↓             │   │          │
+             │        ┌──────────────┐     │   │          │
+             │        │ VERIFY       │     │   │          │
+             │        │              │     │   │          │
+             │        │ Run steps    │─────┘   │          │
+             │        │ from         │ fail    │          │
+             │        │ requirements │         │          │
+             │        └──────┬───────┘         │          │
+             │               │                 │          │
+             │               │ pass            │          │
+             │               │                 │          │
+             │               ↓                 │          │
+             │        ┌──────────────┐         │          │
+             │        │ COMPLETE     │         │          │
+             │        │              │         │          │
+             │        │ Update:      │         │          │
+             │        │ session.md   │─────────┘          │
+             │        │ Status=      │                    │
+             │        │ "Complete"   │                    │
+             │        └──────────────┘                    │
+             │                                            │
+             ↓                                            │
+       ┌──────────────────┐                              │
+       │ MARK_COMPLETE    │                              │
+       │                  │                              │
+       │ Update: tasks [x]│                              │
+       │ Update: session  │──────────────────────────────┘
+       │ (next task)      │
+       └──────────────────┘
+```
 
 ## Files
 
-All files live in the **project's** `.claude/` directory (not the skill directory):
+All files live in the **project's** `.claude/` directory:
 
 | File | Purpose |
 |------|---------|
@@ -18,18 +112,206 @@ All files live in the **project's** `.claude/` directory (not the skill director
 | `.claude/requirements.md` | Implementation specs, verification steps |
 | `.claude/session.md` | Current state for resume |
 
-## When User Says "Plan" or "Setup Tasks"
+## State: CHECK_STATUS
+
+**Prefix:** `CHECK_STATUS`
+
+**Purpose:** Read session.md and route based on Status field.
+
+### Actions
+
+1. Run `pwd` to verify project directory
+2. Read `.claude/session.md`
+3. Look at Status field
+4. Route:
+   - Status="Complete" or "ready to commit" → AWAITING_COMMIT
+   - Status="in progress" or missing → WORKING
+   - Status="blocked" → BLOCKED
+
+### Critical Rules
+
+- ONLY read session.md and route
+- DO NOT read other files, launch agents, or do anything else
+- IF ERROR: STOP and tell user what failed
+
+### Transitions
+
+- CHECK_STATUS → AWAITING_COMMIT (Status="complete")
+- CHECK_STATUS → WORKING (Status="in progress")
+- CHECK_STATUS → BLOCKED (Status="blocked")
+
+## State: AWAITING_COMMIT
+
+**Prefix:** `AWAITING_COMMIT`
+
+**Purpose:** Task is complete. Ask permission to mark done.
+
+### Actions
+
+1. Say: "Task X is complete. May I mark it as complete in tasks.md?"
+2. **STOP - wait for user response**
+3. If user says yes → MARK_COMPLETE
+4. If user says no → STOP, await instruction
+
+### Critical Rules
+
+- ONLY ask permission and STOP
+- DO NOT read files, launch agents, work on next task
+- DO NOT do anything except ask and wait
+
+### Transitions
+
+- AWAITING_COMMIT → MARK_COMPLETE (user says yes)
+- AWAITING_COMMIT → STOP (user says no)
+
+## State: MARK_COMPLETE
+
+**Prefix:** `MARK_COMPLETE`
+
+**Purpose:** Update task files after user approval.
+
+### Actions
+
+1. Update tasks.md: Change `[ ]` to `[x]` for current task
+2. Update session.md: Set to next task with Status="in progress"
+3. Go to CHECK_STATUS
+
+### Critical Rules
+
+- ONLY update files and route
+- DO NOT read other files or research next task
+- IF CANNOT EDIT: Say "Cannot edit files: [reason]" and STOP
+
+### Transitions
+
+- MARK_COMPLETE → CHECK_STATUS
+
+## State: WORKING
+
+**Prefix:** `WORKING`
+
+**Purpose:** Implement the current task.
+
+### Actions
+
+1. Read requirements.md for task specs
+2. Read tasks.md for task list
+3. Work on current task using patterns:
+   - fn(args, deps)
+   - Result types
+   - Zod at boundaries
+4. Update session.md after TDD cycles
+5. When task done → VERIFY
+
+### Session.md Updates
+
+Update at these triggers:
+
+| Trigger | Update |
+|---------|--------|
+| Start task | Status="in progress" |
+| TDD cycle | Brief note in Notes |
+| Hit blocker | Status="blocked", describe |
+| Task done | → transition to VERIFY |
+
+### Critical Rules
+
+- EVERY message must have state prefix
+- DO NOT skip to next task
+- DO NOT work on multiple tasks
+- IF BLOCKED: Document in session.md, STOP
+
+### Transitions
+
+- WORKING → VERIFY (task implementation done)
+- WORKING → BLOCKED (hit blocker)
+
+## State: VERIFY
+
+**Prefix:** `VERIFY`
+
+**Purpose:** Run verification before claiming complete.
+
+### Actions
+
+1. Read Verification section from requirements.md
+2. Run ALL verification commands:
+   ```bash
+   npm test
+   npm run lint
+   npm run build
+   ```
+3. Show ALL output verbatim
+4. If all pass → COMPLETE
+5. If any fail → WORKING (treat as blocker)
+
+### Critical Rules
+
+- EVERY message must have state prefix
+- NEVER skip verification
+- NEVER claim complete without running checks
+- IF ERROR: STOP and tell user
+
+### Transitions
+
+- VERIFY → COMPLETE (all pass)
+- VERIFY → WORKING (any fail)
+
+## State: COMPLETE
+
+**Prefix:** `COMPLETE`
+
+**Purpose:** Update session.md to reflect completion.
+
+### Actions
+
+1. Update session.md: Set Status="Complete"
+2. Go to CHECK_STATUS
+
+### Critical Rules
+
+- ONLY update session.md and route
+- DO NOT ask permission (that's AWAITING_COMMIT)
+- IF ERROR: STOP and tell user
+
+### Transitions
+
+- COMPLETE → CHECK_STATUS
+
+## State: BLOCKED
+
+**Prefix:** `BLOCKED`
+
+**Purpose:** Cannot proceed, need user guidance.
+
+### Actions
+
+1. Explain blocking issue clearly
+2. Show what you tried
+3. **STOP and wait for user guidance**
+
+### Critical Rules
+
+- NEVER improvise workarounds
+- ALWAYS stop and wait for user
+
+### Transitions
+
+- BLOCKED → [any state] (based on user guidance)
+
+## Setup: "Plan" or "Setup Tasks"
+
+When user says "create a plan" or "setup tasks":
 
 1. Ask for task list
-2. Ask for verification commands (npm test, lint, build)
-3. Ask for any constraints or patterns
-4. Create the three files:
+2. Ask for verification commands
+3. Ask for constraints/patterns
+4. Create files:
 
 **.claude/tasks.md**
 ```markdown
 - [ ] Task 1: [exact user wording]
 - [ ] Task 2: [exact user wording]
-- [ ] Task 3: [exact user wording]
 ```
 
 **.claude/requirements.md**
@@ -41,11 +323,8 @@ Before marking complete:
 - `npm run build` - succeeds
 
 ## Task 1: [name]
-- [implementation details]
+- [specs from conversation]
 - [constraints]
-
-## Task 2: [name]
-- [implementation details]
 ```
 
 **.claude/session.md**
@@ -57,92 +336,91 @@ Before marking complete:
 (none yet)
 
 ## Notes
-- [any context needed for resume]
+- [context for resume]
 ```
 
-## When User Says "Continue"
+## Anti-Patterns
 
-1. Read `.claude/session.md`
-2. Route based on Status:
-
-| Status | Action |
-|--------|--------|
-| `in progress` | Continue working on current task |
-| `complete` | Ask permission to mark [x], then advance |
-| `blocked` | Show blocker, wait for guidance |
-
-## Workflow
+### WRONG: Investigating Codebase to Figure Out Progress
 
 ```
-continue
-    │
-    ▼
-┌───────────────┐
-│ Read session  │
-└───────┬───────┘
-        │
-   ┌────┴────┐
-   │         │
-   ▼         ▼
-in progress  complete
-   │         │
-   ▼         ▼
- WORK     ASK TO MARK [x]
-   │         │
-   ▼         ▼
-verify    update files
-   │         │
-   ▼         ▼
-complete  next task
+User: "continue"
+Claude: *Reads tasks.md*
+Claude: "Let me investigate the codebase to understand what's done"
+Claude: *Searches 10+ files, runs git log*
+Claude: *Wastes tokens figuring out state*
 ```
 
-## Working on a Task
+**Problem:** All that info is in session.md already.
 
-1. Read requirements.md for task specs
-2. Implement following patterns (fn(args, deps), Result types)
-3. Update session.md after progress
-4. When done: run verification from requirements.md
-5. If all pass: update session.md Status to "complete"
+### RIGHT: Reading session.md First
 
-## Verification Before Complete
-
-**ALWAYS run verification before claiming complete:**
-
-```bash
-# From requirements.md Verification section
-npm test
-npm run lint
-npm run build
+```
+User: "continue"
+Claude: "CHECK_STATUS"
+Claude: *Reads session.md*
+Claude: "Status shows 'in progress'. Routing to WORKING."
+Claude: "WORKING"
+Claude: "Continuing Task 2..."
 ```
 
-Only set Status="complete" after ALL pass.
+### WRONG: Skipping Verification
 
-## Marking Complete
+```
+Claude: *Completes implementation*
+Claude: "Task 1 is complete!"
+*User commits and pushes*
+*CI fails - tests broken*
+```
 
-When Status="complete" and user says "continue":
+**Problem:** Skipped verification, introduced bugs.
 
-1. Ask: "Task X complete. Mark it done?"
-2. If yes:
-   - Update tasks.md: `- [ ]` → `- [x]`
-   - Update session.md: advance to next task
-3. If no: wait for instruction
+### RIGHT: Running Verification
 
-## Session.md Updates
+```
+Claude: "VERIFY"
+Claude: *Runs npm test* → All pass
+Claude: *Runs npm lint* → All pass
+Claude: *Runs npm build* → Success
+Claude: "COMPLETE"
+Claude: "Task 1 complete, all verification passed."
+```
 
-Update at these triggers:
+### WRONG: Creating Git Commits
 
-| Trigger | Update |
-|---------|--------|
-| Start task | Current, Status="in progress" |
-| TDD cycle complete | Brief note in Notes |
-| Hit blocker | Status="blocked", describe in Notes |
-| Task verified | Status="complete" |
+```
+Claude: *Completes task*
+Claude: *Runs git add . && git commit*
+```
 
-Keep it brief - this is for resume context, not logs.
+**Problem:** User loses control over commits.
+
+### RIGHT: Handing Off to User
+
+```
+Claude: "Task complete, ready for you to commit."
+Claude: "May I mark this task as complete?"
+```
+
+### WRONG: Auto-Advancing Tasks
+
+```
+Claude: "Task 1 done. Starting Task 2..."
+Claude: *Explores codebase for Task 2*
+```
+
+**Problem:** User didn't approve advancing.
+
+### RIGHT: Stopping After Complete
+
+```
+Claude: "Task 1 complete. May I mark it done?"
+*Waits for user*
+```
 
 ## Never Use TodoWrite
 
-This skill replaces Claude Code's built-in todos:
+This skill REPLACES Claude Code's built-in todos:
 
 ```
 WRONG: TodoWrite tool
@@ -152,77 +430,25 @@ WRONG: Internal todo state
 RIGHT: Visible, editable files
 ```
 
-Why: TodoWrite state is lost between sessions. Files persist.
-
-## Never Create Git Commits
-
-Hand off to user for commits:
-
-```
-WRONG: git add . && git commit -m "..."
-RIGHT: "Task complete, ready for you to commit"
-```
-
-User controls commit message, staging, and timing.
-
-## Never Auto-Advance
-
-Stop after completing a task:
-
-```
-WRONG: "Task 1 done. Starting Task 2..."
-RIGHT: "Task 1 complete. May I mark it done?"
-       [wait for user]
-```
-
-User controls pace.
+**Why:** TodoWrite state is lost between sessions. Files persist.
 
 ## Path Troubleshooting
 
 **Symptom:** "File not found" on continue
 
-**Cause:** Looking in skill directory instead of project
-
 **Fix:**
-1. Run `pwd` to check location
+1. Run `pwd`
 2. Read from `./.claude/session.md` (project root)
-3. NOT from `~/.claude/skills/session-continuity/`
-
-## Example Session
-
-```
-User: "setup tasks"
-Claude: "What tasks? What verification commands?"
-
-User: "Add logging, add tests. npm test to verify"
-Claude: Creates .claude/tasks.md, requirements.md, session.md
-        "Ready. Say 'continue' to start Task 1"
-
-User: "continue"
-Claude: Reads session.md → Task 1, in progress
-        Works on Task 1 (add logging)
-        Runs npm test → passes
-        Updates session.md Status="complete"
-        "Task 1 complete, verification passed. Ready to commit."
-
-User: "continue"
-Claude: Reads session.md → Status="complete"
-        "Task 1 is complete. Mark it done?"
-
-User: "yes"
-Claude: Updates tasks.md [x], session.md → Task 2
-        "Moving to Task 2. Continue?"
-
-User: "continue"
-Claude: Works on Task 2...
-```
+3. NOT from skill directory
 
 ## Quick Reference
 
-| User Says | Action |
-|-----------|--------|
-| "plan", "setup tasks" | Create 3 files, ask for specs |
-| "continue" | Read session.md, route by Status |
-| "yes" (after complete) | Mark [x], advance |
-| "skip" | Mark [x] without verification |
-| "blocked" | Update session.md, wait |
+| State | Prefix | Action | Exit |
+|-------|--------|--------|------|
+| CHECK_STATUS | CHECK_STATUS | Read session.md, route | Status-based |
+| AWAITING_COMMIT | AWAITING_COMMIT | Ask permission, STOP | User response |
+| MARK_COMPLETE | MARK_COMPLETE | Update files | → CHECK_STATUS |
+| WORKING | WORKING | Implement task | → VERIFY |
+| VERIFY | VERIFY | Run verification | Pass/Fail |
+| COMPLETE | COMPLETE | Update session.md | → CHECK_STATUS |
+| BLOCKED | BLOCKED | Explain, STOP | User guidance |

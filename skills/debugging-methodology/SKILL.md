@@ -1,12 +1,22 @@
 ---
 name: debugging-methodology
-description: "Evidence-based debugging. Instrument before guessing, trace before theorizing. Uses observability patterns to make failures visible and systematic."
-version: 1.0.0
+description: "Evidence-based debugging with Iron Law discipline. Instrument before guessing, trace before theorizing. Use when encountering any bug, test failure, or unexpected behavior - before proposing fixes."
+version: 1.1.0
 ---
 
 # Debugging Methodology
 
 Stop guessing. Add instrumentation. Follow the evidence.
+
+## The Iron Law
+
+```
+NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
+```
+
+If you haven't gathered evidence, you cannot propose fixes.
+
+**Rationale:** Random fixes waste time and create new bugs. Quick patches mask underlying issues. Systematic debugging is FASTER than guess-and-check thrashing.
 
 ## Core Principle
 
@@ -458,6 +468,43 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal error', traceId: span?.spanContext().traceId });
 });
 ```
+
+## Red Flags - STOP and Follow Process
+
+If you catch yourself thinking:
+- "Quick fix for now, investigate later"
+- "Just try changing X and see if it works"
+- "Add multiple changes, run tests"
+- "It's probably X, let me fix that"
+- "I don't fully understand but this might work"
+- Proposing solutions before tracing data flow
+- "One more fix attempt" (when already tried 2+)
+
+**ALL of these mean: STOP. Return to gathering evidence.**
+
+## The 3-Fix Rule
+
+If 3+ fixes failed:
+1. STOP attempting more fixes
+2. Question the architecture
+3. Consider: Is the pattern fundamentally sound?
+4. Discuss with team before attempting more fixes
+
+**Pattern indicating architectural problem:**
+- Each fix reveals new problems in different places
+- Fixes require massive refactoring
+- Each fix creates new symptoms elsewhere
+
+## Rationalization Prevention
+
+| Excuse | Reality |
+|--------|---------|
+| "Issue is simple, don't need process" | Simple issues have root causes too |
+| "Emergency, no time for process" | Systematic debugging is FASTER than thrashing |
+| "Just try this first, then investigate" | First fix sets the pattern. Do it right. |
+| "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
+| "I see the problem, let me fix it" | Seeing symptoms ≠ understanding root cause |
+| "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem |
 
 ## Remember
 

@@ -23,53 +23,57 @@ Before:
 
 **Skip for:** Typos, formatting, documentation-only changes.
 
-## The Protocol (3 Steps)
+## The Protocol (3 Quick Steps)
+
+**Keep it lightweight** - This isn't detailed planning, just enough to guide implementation. 5-10 lines max for diagrams.
 
 ### 1. Trace the Execution Path
 
 Answer these with **file:line references**:
 
-- **Entry point:** Which HTTP handler/queue consumer/CLI command triggers this? (`src/api/routes.ts:45`)
+- **Entry point:** Which event/request triggers this? (`src/api/routes.ts:45`)
 - **Function chain:** Which `fn(args, deps)` functions are called? (`src/domain/get-user.ts:12`)
-- **Workflow composition:** Does it use `createWorkflow()`? Which steps? (`src/workflows/load-user-data.ts:23`)
 - **Error location:** Where does the failure occur? (`src/domain/get-user.ts:28`)
+- **Workflow composition:** Does it use `createWorkflow()`? Which steps? (`src/workflows/load-user-data.ts:23`)
 - **Result flow:** How does the Result propagate? (`src/api/handlers.ts:67`)
 
-### 2. Create Execution Diagram
+### 2. Quick Diagram
 
-Show the flow with Result types and deps:
+Simple class.method() flow with relevant data and Result types:
 
 ```
-HTTP Request: POST /users/:id
+Event: POST /users/:id
   ↓ (args: { userId: string })
 Handler.getUser() [src/api/handlers.ts:45]
-  ↓ (validates with Zod schema)
-getUserSchema.safeParse() [src/api/handlers.ts:48]
-  ↓ (parsed.data: { userId: string })
+  ↓ (validates with Zod)
 getUser(args, deps) [src/domain/get-user.ts:12]
-  ↓ (deps: { db: Database, logger: Logger })
+  ↓ (deps: { db, logger })
 deps.db.findUser() [src/infra/database.ts:89]
   ↓ (returns: User | null)
-Result check [src/domain/get-user.ts:28]
+Result check [src/domain/get-user.ts:28] ← 💥 Error here
   ↓ (if null) → err('NOT_FOUND')
   ↓ (if user) → ok(user)
 resultToResponse() [src/api/handlers.ts:67]
-  ↓ (maps Result → HTTP)
+  ↓
 HTTP 200 or 404
 ```
+
+**Keep it short** - 5-10 lines max. Focus on the relevant path.
 
 **Key elements:**
 - Show `fn(args, deps)` signatures
 - Show Result types (`ok()` vs `err()`)
 - Show workflow steps if applicable
 - Mark error location with 💥
-- Keep it concise (5-15 lines max)
+- Include relevant data fields in flow
 
 ### 3. Verify Understanding
 
-Ask: "Here's the execution flow: [diagram]. The error occurs at [file:line] when [condition]. Correct?"
+Ask: "Here's the flow: [diagram]. The error occurs at [file:line] when [condition]. Correct?"
 
-**Wait for confirmation before proceeding.**
+**Wait for confirmation, then proceed.**
+
+**Skip for trivial changes** - Typos, formatting, docs-only changes don't need this protocol.
 
 ## Integration with Patterns
 

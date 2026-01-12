@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "TypeScript patterns and skills for production-grade AI-assisted development",
-    "version": "1.0.0"
+    "version": "2.4.0"
   },
   "plugins": [
     {
       "name": "jagreehal-claude-skills",
       "source": "./",
       "description": "Opinionated TypeScript patterns: fn(args, deps), Result types, Zod validation, and more",
-      "version": "1.5.1",
+      "version": "2.4.0",
       "license": "MIT",
       "keywords": [
         "typescript",
@@ -21,7 +21,85 @@
         "dependency-injection",
         "result-types",
         "zod",
-        "architecture"
+        "architecture",
+        "browser-automation",
+        "skill-authoring",
+        "tdd",
+        "debugging",
+        "verification",
+        "workflow"
+      ],
+      "category": "development",
+      "skills": [
+        "./skills/agent-browser",
+        "./skills/api-design",
+        "./skills/code-flow-analysis",
+        "./skills/concise-output",
+        "./skills/confidence-levels",
+        "./skills/config-management",
+        "./skills/critical-peer",
+        "./skills/data-visualization",
+        "./skills/debugging-methodology",
+        "./skills/design-principles",
+        "./skills/documentation-standards",
+        "./skills/fn-args-deps",
+        "./skills/investigation-modes",
+        "./skills/literal-answers",
+        "./skills/observability",
+        "./skills/pattern-enforcement",
+        "./skills/performance-testing",
+        "./skills/answer-questions-directly",
+        "./skills/react-development",
+        "./skills/research-first",
+        "./skills/resilience",
+        "./skills/result-types",
+        "./skills/session-continuity",
+        "./skills/skill-authoring",
+        "./skills/storybook-journeys",
+        "./skills/strict-typescript",
+        "./skills/structured-writing",
+        "./skills/system-architecture",
+        "./skills/tdd-workflow",
+        "./skills/testing-strategy",
+        "./skills/ui-design-principles",
+        "./skills/validation-boundary",
+        "./skills/writing-tests",
+        "./skills/verification-before-completion",
+        "./skills/design-exploration",
+        "./skills/implementation-planning",
+        "./skills/git-worktrees",
+        "./skills/parallel-agent-dispatch",
+        "./skills/code-review-reception",
+        "./skills/branch-completion"
+      ]
+    },
+    {
+      "name": "code-review",
+      "source": "./code-review",
+      "description": "Automatic code review triggered on file modifications. Reviews against project-specific rules aligned with TypeScript patterns.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": [
+        "code-review",
+        "automation",
+        "hooks",
+        "typescript",
+        "patterns"
+      ],
+      "category": "development"
+    },
+    {
+      "name": "track-and-improve",
+      "source": "./track-and-improve",
+      "description": "Capture mistakes and improvement opportunities with 5 whys root cause analysis. Learn from patterns to prevent future issues.",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": [
+        "learning",
+        "improvement",
+        "5-whys",
+        "root-cause",
+        "tracking"
       ],
       "category": "development"
     }

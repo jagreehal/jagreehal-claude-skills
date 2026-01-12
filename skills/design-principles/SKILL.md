@@ -1,7 +1,7 @@
 ---
 name: design-principles
 description: "Software design beyond syntax. Fail-fast over fallbacks, explicit over implicit, composition over inheritance. Integrates with fn(args, deps) and Result type patterns. Includes 8-dimension design analysis."
-version: 1.1.0
+version: 1.2.0
 ---
 
 # Design Principles
@@ -305,9 +305,73 @@ function process(orders: Order[]) {
 | Build "for later" | Build what you need now |
 | Add `else` branch | Use early return |
 
-## 8-Dimension Design Analysis
+## 8-Dimension Design Analysis Protocol
 
 Use this framework for systematic code review across design dimensions.
+
+### When This Activates
+
+Use this protocol when analyzing code at class or module level for:
+- Design quality assessment
+- Refactoring opportunity identification
+- Code review for design improvements
+- Architecture evaluation
+- Pattern and anti-pattern detection
+
+**Scope:** Small-scale analysis (single class, module, or small set of related files)
+
+### The Protocol
+
+#### Step 1: Understand the Code (REQUIRED)
+
+**Auto-invoke the `code-flow-analysis` skill FIRST.**
+
+Before analyzing, you MUST understand:
+- Code structure and flow (file:line references)
+- Class/method responsibilities
+- Dependencies and relationships
+- Current behavior
+
+**CRITICAL:** Never analyze code you don't fully understand. Evidence-based analysis requires comprehension.
+
+#### Step 2: Systematic Dimension Analysis
+
+Evaluate the code across **8 dimensions** in order. For each dimension, identify specific, evidence-based findings.
+
+#### Step 3: Generate Findings Report
+
+Provide structured output with:
+- Severity levels (🔴 Critical, 🟡 Suggestion)
+- File:line references for ALL findings
+- Concrete examples (actual code)
+- Actionable recommendations
+- Before/after code where helpful
+
+### Important Rules
+
+**ALWAYS:**
+- Auto-invoke `code-flow-analysis` FIRST
+- Provide file:line references for EVERY finding
+- Show actual code snippets (not abstractions)
+- Be specific, not generic (enumerate exact issues)
+- Justify severity levels (why Critical vs Suggestion)
+- Focus on evidence-based findings (no speculation)
+- Prioritize actionable insights only
+
+**NEVER:**
+- Analyze code you haven't understood
+- Use generic descriptions ("this could be better")
+- Guess about behavior (verify with code flow)
+- Skip dimensions (evaluate all 8 systematically)
+- Suggest changes without showing code examples
+- Use words like "probably", "might", "maybe" without evidence
+- Highlight what's working well (focus only on improvements)
+
+**SKIP:**
+- Trivial findings (nitpicks that don't improve design)
+- Style preferences (unless it affects readability/maintainability)
+- Premature optimizations (performance without evidence)
+- Subjective opinions (stick to principles and evidence)
 
 ### 1. Naming
 

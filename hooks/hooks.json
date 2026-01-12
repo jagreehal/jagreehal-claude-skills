@@ -2,11 +2,11 @@
   "hooks": {
     "PostToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Write|Edit|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "if [ -f package.json ] && [ -f tsconfig.json ]; then (npm run type-check 2>&1 || true) | head -30; fi"
+            "command": "if [ -f package.json ] && [ -f tsconfig.json ]; then (npm run build 2>&1 || true) | head -30; fi"
           },
           {
             "type": "command",
