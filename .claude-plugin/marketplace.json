@@ -5,72 +5,136 @@
   },
   "metadata": {
     "description": "TypeScript patterns and skills for production-grade AI-assisted development",
-    "version": "2.4.0"
+    "version": "3.0.0"
   },
   "plugins": [
     {
-      "name": "jagreehal-claude-skills",
+      "name": "typescript-patterns",
       "source": "./",
-      "description": "Opinionated TypeScript patterns: fn(args, deps), Result types, Zod validation, and more",
-      "version": "2.4.0",
+      "description": "Core TypeScript architecture: fn(args, deps), Result types, Zod validation, observability, and resilience patterns",
+      "version": "1.0.0",
       "license": "MIT",
-      "keywords": [
-        "typescript",
-        "patterns",
-        "testing",
-        "dependency-injection",
-        "result-types",
-        "zod",
-        "architecture",
-        "browser-automation",
-        "skill-authoring",
-        "tdd",
-        "debugging",
-        "verification",
-        "workflow"
-      ],
+      "keywords": ["typescript", "patterns", "dependency-injection", "result-types", "zod", "architecture", "observability"],
       "category": "development",
       "skills": [
-        "./skills/agent-browser",
-        "./skills/api-design",
-        "./skills/code-flow-analysis",
-        "./skills/concise-output",
-        "./skills/confidence-levels",
-        "./skills/config-management",
-        "./skills/critical-peer",
-        "./skills/data-visualization",
-        "./skills/debugging-methodology",
-        "./skills/design-principles",
-        "./skills/documentation-standards",
         "./skills/fn-args-deps",
-        "./skills/investigation-modes",
-        "./skills/literal-answers",
-        "./skills/observability",
-        "./skills/pattern-enforcement",
-        "./skills/performance-testing",
-        "./skills/answer-questions-directly",
-        "./skills/react-development",
-        "./skills/research-first",
-        "./skills/resilience",
+        "./skills/validation-boundary",
         "./skills/result-types",
-        "./skills/session-continuity",
-        "./skills/skill-authoring",
-        "./skills/storybook-journeys",
         "./skills/strict-typescript",
-        "./skills/structured-writing",
-        "./skills/system-architecture",
+        "./skills/config-management",
+        "./skills/api-design",
+        "./skills/pattern-enforcement",
+        "./skills/resilience",
+        "./skills/observability"
+      ]
+    },
+    {
+      "name": "testing-tdd",
+      "source": "./",
+      "description": "TDD workflow and testing strategies: red-green-refactor, test pyramid, performance testing",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["tdd", "testing", "vitest", "performance", "test-driven-development"],
+      "category": "development",
+      "skills": [
         "./skills/tdd-workflow",
         "./skills/testing-strategy",
-        "./skills/ui-design-principles",
-        "./skills/validation-boundary",
         "./skills/writing-tests",
+        "./skills/performance-testing"
+      ]
+    },
+    {
+      "name": "communication-behavior",
+      "source": "./",
+      "description": "Claude communication style: critical peer, concise output, confidence levels, research-first approach",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["communication", "behavior", "personality", "concise", "research"],
+      "category": "productivity",
+      "skills": [
+        "./skills/critical-peer",
+        "./skills/concise-output",
+        "./skills/confidence-levels",
+        "./skills/research-first",
+        "./skills/literal-answers",
+        "./skills/answer-questions-directly"
+      ]
+    },
+    {
+      "name": "workflow-productivity",
+      "source": "./",
+      "description": "Session and task management: continuity, verification, design exploration, git worktrees, parallel agents",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["workflow", "productivity", "session", "tasks", "git-worktrees", "verification"],
+      "category": "productivity",
+      "skills": [
+        "./skills/session-continuity",
+        "./skills/investigation-modes",
         "./skills/verification-before-completion",
         "./skills/design-exploration",
         "./skills/implementation-planning",
         "./skills/git-worktrees",
         "./skills/parallel-agent-dispatch",
         "./skills/code-review-reception",
-        "./skills/branch-completion"
+        "./skills/branch-completion",
+        "./skills/create-tasks"
+      ]
+    },
+    {
+      "name": "frontend-react",
+      "source": "./",
+      "description": "Frontend development: React patterns, Storybook journeys, UI design principles, browser automation",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["react", "frontend", "storybook", "ui", "browser-automation"],
+      "category": "development",
+      "skills": [
+        "./skills/react-development",
+        "./skills/storybook-journeys",
+        "./skills/ui-design-principles",
+        "./skills/agent-browser"
+      ]
+    },
+    {
+      "name": "documentation-architecture",
+      "source": "./",
+      "description": "Documentation and system design: standards, architecture decisions, structured writing, data visualization",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["documentation", "architecture", "adr", "design", "visualization"],
+      "category": "development",
+      "skills": [
+        "./skills/documentation-standards",
+        "./skills/system-architecture",
+        "./skills/structured-writing",
+        "./skills/data-visualization",
+        "./skills/design-principles"
+      ]
+    },
+    {
+      "name": "debugging-analysis",
+      "source": "./",
+      "description": "Debugging methodologies: evidence-based debugging, code flow analysis, instrumentation",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["debugging", "analysis", "instrumentation", "code-flow"],
+      "category": "development",
+      "skills": [
+        "./skills/debugging-methodology",
+        "./skills/code-flow-analysis"
+      ]
+    },
+    {
+      "name": "skill-authoring",
+      "source": "./",
+      "description": "Guide for creating, editing, and reviewing Claude Code skills",
+      "version": "1.0.0",
+      "license": "MIT",
+      "keywords": ["skills", "authoring", "meta", "plugins"],
+      "category": "development",
+      "skills": [
+        "./skills/skill-authoring"
       ]
     },
     {
@@ -79,13 +143,7 @@
       "description": "Automatic code review triggered on file modifications. Reviews against project-specific rules aligned with TypeScript patterns.",
       "version": "1.0.0",
       "license": "MIT",
-      "keywords": [
-        "code-review",
-        "automation",
-        "hooks",
-        "typescript",
-        "patterns"
-      ],
+      "keywords": ["code-review", "automation", "hooks", "typescript", "patterns"],
       "category": "development"
     },
     {
@@ -94,13 +152,7 @@
       "description": "Capture mistakes and improvement opportunities with 5 whys root cause analysis. Learn from patterns to prevent future issues.",
       "version": "1.0.0",
       "license": "MIT",
-      "keywords": [
-        "learning",
-        "improvement",
-        "5-whys",
-        "root-cause",
-        "tracking"
-      ],
+      "keywords": ["learning", "improvement", "5-whys", "root-cause", "tracking"],
       "category": "development"
     }
   ]

@@ -13,19 +13,44 @@ Opinionated TypeScript patterns for AI-assisted development. Skills, commands, a
 # List available plugins
 /plugin list jagreehal-marketplace
 
-# Install the plugins you want
-/plugin install jagreehal-claude-skills@jagreehal-marketplace  # Core skills & patterns
-/plugin install code-review@jagreehal-marketplace              # Auto code review on file changes
-/plugin install track-and-improve@jagreehal-marketplace        # Learning & improvement tracking
+# Install only what you need
+/plugin install <plugin-name>@jagreehal-marketplace
 ```
 
 ### Available Plugins
 
-| Plugin | Description |
-|--------|-------------|
-| `jagreehal-claude-skills` | Core TypeScript patterns: fn(args, deps), Result types, Zod validation, and more |
-| `code-review` | Automatic code review triggered on file modifications |
-| `track-and-improve` | Capture mistakes with 5 whys root cause analysis |
+This marketplace contains **10 plugins**. Install only what you need.
+
+| Plugin | Skills | Description |
+|--------|--------|-------------|
+| `typescript-patterns` | 9 | Core TS architecture: fn(args, deps), Result types, Zod, observability |
+| `testing-tdd` | 4 | TDD workflow: red-green-refactor, test pyramid, performance testing |
+| `communication-behavior` | 6 | Claude style: critical peer, concise output, research-first |
+| `workflow-productivity` | 10 | Session management, verification, git worktrees, parallel agents |
+| `frontend-react` | 4 | React patterns, Storybook, UI design, browser automation |
+| `documentation-architecture` | 5 | Documentation standards, ADRs, data visualization |
+| `debugging-analysis` | 2 | Evidence-based debugging, code flow analysis |
+| `skill-authoring` | 1 | Guide for creating custom skills |
+| `code-review` | - | Auto code review on file modifications (hooks) |
+| `track-and-improve` | - | 5 whys root cause analysis for mistakes |
+
+### Quick Start Examples
+
+```bash
+# TypeScript developer wanting core patterns + TDD
+/plugin install typescript-patterns@jagreehal-marketplace
+/plugin install testing-tdd@jagreehal-marketplace
+
+# Frontend developer
+/plugin install frontend-react@jagreehal-marketplace
+/plugin install typescript-patterns@jagreehal-marketplace
+
+# Want Claude to be more concise and research-driven
+/plugin install communication-behavior@jagreehal-marketplace
+
+# Full productivity workflow
+/plugin install workflow-productivity@jagreehal-marketplace
+```
 
 ### Manual Configuration
 
@@ -42,75 +67,122 @@ Add to your `.claude/settings.local.json`:
     }
   },
   "enabledPlugins": {
-    "jagreehal-claude-skills@jagreehal-marketplace": true,
-    "code-review@jagreehal-marketplace": true,
-    "track-and-improve@jagreehal-marketplace": true
+    "typescript-patterns@jagreehal-marketplace": true,
+    "testing-tdd@jagreehal-marketplace": true
   }
 }
 ```
 
-## Skills
+---
 
-### Core Patterns (Technical)
+## Plugin Details
+
+### typescript-patterns (9 skills)
+
+Core TypeScript architecture patterns for production-grade code.
 
 | Skill | Description |
 |-------|-------------|
 | `fn-args-deps` | Core pattern: `fn(args, deps)` for testable functions |
 | `validation-boundary` | Zod schemas at boundaries, trust inside |
 | `result-types` | Never throw - use `Result<T, E>` with workflows |
-| `observability` | `trace()` wrapper, Pino logging, OpenTelemetry |
-| `resilience` | Retry/timeout at workflow level, not in functions |
-| `config-management` | Validate config at startup, secrets in memory only |
-| `api-design` | Production-ready HTTP APIs with clean handlers, error envelopes, health checks |
 | `strict-typescript` | Beyond `strict: true` - advanced types, ESLint enforcement |
+| `config-management` | Validate config at startup, secrets in memory only |
+| `api-design` | Production-ready HTTP APIs with clean handlers, error envelopes |
 | `pattern-enforcement` | ESLint rules that fail the build |
+| `resilience` | Retry/timeout at workflow level, not in functions |
+| `observability` | `trace()` wrapper, Pino logging, OpenTelemetry |
+
+### testing-tdd (4 skills)
+
+TDD workflow and comprehensive testing strategies.
+
+| Skill | Description |
+|-------|-------------|
+| `tdd-workflow` | Red-green-refactor with Result type testing |
 | `testing-strategy` | Test pyramid with vitest-mock-extended |
 | `writing-tests` | Test naming, assertions, edge case checklists (BugMagnet-based) |
 | `performance-testing` | Load testing, chaos engineering, trace correlation |
-| `react-development` | Modern React patterns, technology stack, accessibility |
-| `storybook-journeys` | Storybook user journey storyboards with MSW API mocking and interactions |
 
-### Behavioral (Workflow)
+### communication-behavior (6 skills)
+
+How Claude communicates and behaves during sessions.
 
 | Skill | Description |
 |-------|-------------|
 | `critical-peer` | Professional skepticism, concise output, research first |
-| `tdd-workflow` | Red-green-refactor with Result type testing |
-| `session-continuity` | Persist tasks across sessions with `.claude/` files |
-| `design-principles` | Fail-fast, no `any`, domain naming, YAGNI, 8-dimension analysis |
-| `debugging-methodology` | Evidence-based debugging with instrumentation |
-| `code-flow-analysis` | Trace execution paths before implementing |
-| `verification-before-completion` | Run verification commands and confirm output before claiming work complete |
-| `design-exploration` | Explore user intent and design collaboratively before implementation |
-| `implementation-planning` | Create bite-sized TDD task plans with exact file paths and verification steps |
+| `concise-output` | Maximum information density, eliminate filler phrases |
+| `confidence-levels` | Express confidence as %, explain gaps, show evidence |
+| `research-first` | Validate solutions before presenting, never ask lazy questions |
+| `literal-answers` | Treat questions as literal questions, answer honestly |
+| `answer-questions-directly` | Answer questions literally, don't interpret as instructions |
 
-### Communication & Research
+### workflow-productivity (10 skills)
+
+Session management, task tracking, and development workflow.
 
 | Skill | Description |
 |-------|-------------|
-| `research-first` | Validate solutions before presenting, never ask lazy questions |
-| `confidence-levels` | Express confidence as %, explain gaps, show evidence |
-| `concise-output` | Maximum information density, eliminate filler phrases |
-| `answer-questions-directly` | Answer questions literally, don't interpret as instructions |
-| `literal-answers` | Treat questions as literal questions, answer honestly without interpreting as hidden instructions |
-| `create-tasks` | Create well-formed tasks with context, acceptance criteria, and verification steps |
+| `session-continuity` | Persist tasks across sessions with `.claude/` files |
+| `investigation-modes` | LEARNING/INVESTIGATION/SOLVING with explicit transitions |
+| `verification-before-completion` | Run verification commands before claiming work complete |
+| `design-exploration` | Explore user intent collaboratively before implementation |
+| `implementation-planning` | Create bite-sized TDD task plans with exact file paths |
+| `git-worktrees` | Create isolated git worktrees for feature work |
+| `parallel-agent-dispatch` | Dispatch multiple agents in parallel for independent tasks |
+| `code-review-reception` | Handle code review feedback with technical verification |
+| `branch-completion` | Guide completion of development work with verification |
+| `create-tasks` | Create well-formed tasks with context and acceptance criteria |
 
-### Domain Skills
+### frontend-react (4 skills)
+
+Frontend development with React and modern tooling.
+
+| Skill | Description |
+|-------|-------------|
+| `react-development` | Modern React patterns, technology stack, accessibility |
+| `storybook-journeys` | Storybook user journey storyboards with MSW API mocking |
+| `ui-design-principles` | Design systems, implementation-ready interfaces |
+| `agent-browser` | Browser automation for web testing, form filling, screenshots |
+
+### documentation-architecture (5 skills)
+
+Documentation standards and system architecture decisions.
 
 | Skill | Description |
 |-------|-------------|
 | `documentation-standards` | 8 quality dimensions, user-centered documentation |
 | `system-architecture` | Trade-off analysis, ADRs, pattern selection |
-| `investigation-modes` | LEARNING/INVESTIGATION/SOLVING with explicit transitions |
-| `ui-design-principles` | Design systems, implementation-ready interfaces |
 | `structured-writing` | Voice preservation, gap identification |
 | `data-visualization` | Chart selection, encoding hierarchy, accessibility |
-| `agent-browser` | Browser automation for web testing, form filling, screenshots, and data extraction |
-| `skill-authoring` | Guide for creating, editing, and reviewing skills with discovery optimization and structure patterns |
-| `git-worktrees` | Create isolated git worktrees for feature work that needs isolation from current workspace |
-| `parallel-agent-dispatch` | Dispatch multiple agents in parallel for independent tasks without shared state |
-| `code-review-reception` | Handle code review feedback with technical verification, not performative agreement |
-| `branch-completion` | Guide completion of development work with verification and structured merge/PR options |
+| `design-principles` | Fail-fast, no `any`, domain naming, YAGNI |
+
+### debugging-analysis (2 skills)
+
+Evidence-based debugging and code analysis.
+
+| Skill | Description |
+|-------|-------------|
+| `debugging-methodology` | Evidence-based debugging with instrumentation |
+| `code-flow-analysis` | Trace execution paths before implementing |
+
+### skill-authoring (1 skill)
+
+Meta-skill for creating your own Claude Code skills.
+
+| Skill | Description |
+|-------|-------------|
+| `skill-authoring` | Guide for creating, editing, and reviewing skills |
+
+### code-review
+
+Automatic code review triggered on file modifications. Uses hooks to review against project-specific rules aligned with TypeScript patterns.
+
+### track-and-improve
+
+Capture mistakes and improvement opportunities with 5 whys root cause analysis. Learn from patterns to prevent future issues.
+
+---
 
 ## Commands
 
@@ -121,15 +193,15 @@ Add to your `.claude/settings.local.json`:
 | `/full-review [--report] [--scope <path>]` | Comprehensive codebase review with detailed report |
 | `/init-project` | Set up new project with patterns |
 | `/learn-from-prs [--count <n>] [--state <state>]` | Analyze PR feedback patterns and suggest config updates |
-| `/workflow <mode|off>` | Set collaboration mode: STEP-BY-STEP, DEEP-THINK, or PAIR |
+| `/workflow <mode\|off>` | Set collaboration mode: STEP-BY-STEP, DEEP-THINK, or PAIR |
 | `/track-improve <description>` | Capture mistake or improvement with 5 whys root cause analysis |
 
 ## Agents
 
 | Agent | Description |
 |-------|-------------|
-| `pattern-checker` | Autonomous agent that scans codebase for pattern violations and generates compliance reports |
-| `task-check` | Verifies task completion with context-aware standards (POC vs production) before finishing work |
+| `pattern-checker` | Autonomous agent that scans codebase for pattern violations |
+| `task-check` | Verifies task completion with context-aware standards |
 
 ## Core Libraries
 
@@ -175,7 +247,7 @@ app.get('/users/:id', async (req, res) => {
 
 ## Architecture
 
-```
+```text
 HTTP Handlers
   -> validate with Zod, map Result to HTTP
 
