@@ -10,9 +10,22 @@ Opinionated TypeScript patterns for AI-assisted development. Skills, commands, a
 # Add the marketplace
 /plugin marketplace add jagreehal/jagreehal-claude-skills
 
-# Install the plugin
-/plugin install jagreehal-claude-skills@jagreehal-marketplace
+# List available plugins
+/plugin list jagreehal-marketplace
+
+# Install the plugins you want
+/plugin install jagreehal-claude-skills@jagreehal-marketplace  # Core skills & patterns
+/plugin install code-review@jagreehal-marketplace              # Auto code review on file changes
+/plugin install track-and-improve@jagreehal-marketplace        # Learning & improvement tracking
 ```
+
+### Available Plugins
+
+| Plugin | Description |
+|--------|-------------|
+| `jagreehal-claude-skills` | Core TypeScript patterns: fn(args, deps), Result types, Zod validation, and more |
+| `code-review` | Automatic code review triggered on file modifications |
+| `track-and-improve` | Capture mistakes with 5 whys root cause analysis |
 
 ### Manual Configuration
 
@@ -29,7 +42,9 @@ Add to your `.claude/settings.local.json`:
     }
   },
   "enabledPlugins": {
-    "jagreehal-claude-skills@jagreehal-marketplace": true
+    "jagreehal-claude-skills@jagreehal-marketplace": true,
+    "code-review@jagreehal-marketplace": true,
+    "track-and-improve@jagreehal-marketplace": true
   }
 }
 ```
@@ -65,6 +80,9 @@ Add to your `.claude/settings.local.json`:
 | `design-principles` | Fail-fast, no `any`, domain naming, YAGNI, 8-dimension analysis |
 | `debugging-methodology` | Evidence-based debugging with instrumentation |
 | `code-flow-analysis` | Trace execution paths before implementing |
+| `verification-before-completion` | Run verification commands and confirm output before claiming work complete |
+| `design-exploration` | Explore user intent and design collaboratively before implementation |
+| `implementation-planning` | Create bite-sized TDD task plans with exact file paths and verification steps |
 
 ### Communication & Research
 
@@ -73,7 +91,9 @@ Add to your `.claude/settings.local.json`:
 | `research-first` | Validate solutions before presenting, never ask lazy questions |
 | `confidence-levels` | Express confidence as %, explain gaps, show evidence |
 | `concise-output` | Maximum information density, eliminate filler phrases |
-| `literal-answers` | Answer questions literally, don't interpret as instructions |
+| `answer-questions-directly` | Answer questions literally, don't interpret as instructions |
+| `literal-answers` | Treat questions as literal questions, answer honestly without interpreting as hidden instructions |
+| `create-tasks` | Create well-formed tasks with context, acceptance criteria, and verification steps |
 
 ### Domain Skills
 
@@ -85,6 +105,12 @@ Add to your `.claude/settings.local.json`:
 | `ui-design-principles` | Design systems, implementation-ready interfaces |
 | `structured-writing` | Voice preservation, gap identification |
 | `data-visualization` | Chart selection, encoding hierarchy, accessibility |
+| `agent-browser` | Browser automation for web testing, form filling, screenshots, and data extraction |
+| `skill-authoring` | Guide for creating, editing, and reviewing skills with discovery optimization and structure patterns |
+| `git-worktrees` | Create isolated git worktrees for feature work that needs isolation from current workspace |
+| `parallel-agent-dispatch` | Dispatch multiple agents in parallel for independent tasks without shared state |
+| `code-review-reception` | Handle code review feedback with technical verification, not performative agreement |
+| `branch-completion` | Guide completion of development work with verification and structured merge/PR options |
 
 ## Commands
 
@@ -95,6 +121,8 @@ Add to your `.claude/settings.local.json`:
 | `/full-review [--report] [--scope <path>]` | Comprehensive codebase review with detailed report |
 | `/init-project` | Set up new project with patterns |
 | `/learn-from-prs [--count <n>] [--state <state>]` | Analyze PR feedback patterns and suggest config updates |
+| `/workflow <mode|off>` | Set collaboration mode: STEP-BY-STEP, DEEP-THINK, or PAIR |
+| `/track-improve <description>` | Capture mistake or improvement with 5 whys root cause analysis |
 
 ## Agents
 
