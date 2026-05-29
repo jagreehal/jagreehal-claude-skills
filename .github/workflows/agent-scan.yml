@@ -1,0 +1,41 @@
+name: Agent Scan
+
+# Scans the published skills for prompt injection, tool poisoning, malware
+# hidden in instructions, and leaked secrets using Snyk's agent-scan
+# (https://github.com/snyk/agent-scan). Runs on every PR and push to main so a
+# bad skill (or a compromised bundled script) is caught before it ships.
+#
+# Setup: add a repository secret named SNYK_TOKEN
+#   (Settings > Secrets and variables > Actions > New repository secret).
+#   Get the token from https://app.snyk.io/account
+#
+# Note: agent-scan sends skill names, descriptions, and tool definitions to the
+# Snyk Agent Scan API for analysis. Snyk states it does not store or log them.
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - ".github/workflows/agent-scan.yml"
+  push:
+    branches: [main]
+    paths:
+      - "skills/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Scan skills with Snyk agent-scan
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: uvx --python 3.12 snyk-agent-scan@latest ./skills --ci
