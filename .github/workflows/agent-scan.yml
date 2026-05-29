@@ -38,4 +38,9 @@ jobs:
       - name: Scan skills with Snyk agent-scan
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        run: uvx --python 3.12 snyk-agent-scan@latest ./skills --ci
+        # --ci exits non-zero on findings so the scan can gate merges.
+        # It requires --dangerously-run-mcp-servers, which only spawns
+        # subprocesses for stdio MCP servers in the scanned configs. This repo
+        # ships skills only (no MCP servers), so the flag is inert here. Revisit
+        # if a skill that bundles an MCP server is ever added.
+        run: uvx --python 3.12 snyk-agent-scan@latest ./skills --ci --dangerously-run-mcp-servers
