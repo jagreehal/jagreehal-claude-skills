@@ -1,6 +1,6 @@
 ---
 name: react-testable-storybookable
-description: Makes React components testable and storybookable by enforcing one property: components depend only on props and injectable context, never on API, router, or globals, so a story and a test come almost for free. Use when building or refactoring a component and you want a matching story and test, setting up renderWithProviders or a test-only provider, sharing one MSW handler/fixture set across Vitest + Storybook + dev, or writing React Query hooks with a key factory that surface explicit status.
+description: Makes React components testable and storybookable by keeping them dependent only on props and injectable context, never on API, router, or globals, so a story and a test come almost for free. Use when building or refactoring a component and you want a matching story and test, setting up renderWithProviders or a test-only provider, sharing one MSW handler/fixture set across Vitest + Storybook + dev, or writing React Query hooks with a key factory that surface explicit status.
 version: 1.0.0
 libraries: ["@tanstack/react-query", "msw", "@storybook/test", "@testing-library/react", "vitest"]
 ---
