@@ -1,18 +1,31 @@
 ---
 name: structured-writing
-description: "Writing assistance with voice preservation. Structure content, ask clarifying questions, identify gaps. Small edits execute; large changes ask first."
-version: 1.0.0
+description: Structures dictated content into clear documents while preserving the author's voice, asking clarifying questions and flagging gaps. Use when helping someone draft, organize, or tighten writing (planning docs, decision docs, proposals, meeting notes) where the author owns the ideas and the tool owns the structure.
+version: 1.1.0
 ---
 
 # Structured Writing
 
-Structure content, preserve voice, identify gaps.
+## Overview
 
-## Core Principle
+The author dictates; the tool structures. Help someone turn raw thinking into a clear document without taking over the writing. The value is organizing, formatting, and surfacing gaps while preserving the author's voice and ideas, not generating content, opinions, or domain expertise on their behalf.
 
-User dictates. Tool structures. No large autonomous changes without asking.
+The dividing line is autonomy. Small edits that capture intent (formatting, fixing typos, ordering sections) execute directly. Large changes that alter meaning, voice, or content (rewrites, moving major sections, adding substance) get proposed first, never imposed. When the document is missing something, frame it as a completeness question, not as expert advice. This keeps the author in control of *what* is said while the tool handles *how* it's arranged.
 
-## Capabilities
+## When to Use
+
+- Drafting or organizing a document from dictated or rough content
+- Structuring planning docs, decision docs, proposals, analyses, or meeting notes
+- Tightening verbose or repetitive writing the author already produced
+- Identifying gaps in a document's completeness
+
+**When NOT to use:** Don't use this to generate ideas, write content the author didn't provide, express opinions, recommend approaches, or supply subject-matter expertise. The subject being written about is out of scope; only the structure, clarity, completeness, and formatting are in scope.
+
+**Related:** [documentation-standards](../documentation-standards/SKILL.md) for the quality dimensions that judge the finished document; [system-architecture](../system-architecture/SKILL.md) for the ADR/decision-doc structures these workflows produce; [data-visualization](../data-visualization/SKILL.md) when content is better shown as a table or diagram.
+
+## Core Rule
+
+The user dictates. The tool structures. No large autonomous changes without asking.
 
 | Capability | Description |
 |------------|-------------|
@@ -48,7 +61,7 @@ User dictates. Tool structures. No large autonomous changes without asking.
 
 ## Gap Identification
 
-### WRONG - Domain Expertise
+### WRONG: Domain Expertise
 
 ```
 "Leadership often wants to know what you think about this."
@@ -58,7 +71,7 @@ User dictates. Tool structures. No large autonomous changes without asking.
 
 **Problem:** Asserting domain knowledge.
 
-### CORRECT - Completeness Questions
+### CORRECT: Completeness Questions
 
 ```
 "Is your preference relevant to include?"
@@ -139,7 +152,7 @@ When user dictates verbally, identify patterns to propose cleanup:
 
 ## Examples
 
-### WRONG - Autonomous Rewrite
+### WRONG: Autonomous Rewrite
 
 ```
 User: "Write that the project is delayed because of resource constraints"
@@ -151,7 +164,7 @@ made and best practices for communicating schedule changes..."
 
 **Problem:** Added substantial content user didn't request.
 
-### CORRECT - Capture Intent
+### CORRECT: Capture Intent
 
 ```
 User: "Write that the project is delayed because of resource constraints"
@@ -166,7 +179,7 @@ Questions:
 
 ---
 
-### WRONG - Changing Voice
+### WRONG: Changing Voice
 
 ```
 User: [casual, direct writing style]
@@ -174,7 +187,7 @@ User: [casual, direct writing style]
 Tool: [returns formal, corporate-speak rewrite]
 ```
 
-### CORRECT - Preserve Voice
+### CORRECT: Preserve Voice
 
 ```
 User: [casual, direct writing style]
@@ -185,14 +198,6 @@ Tool: [structures content, fixes typos, preserves casual tone]
 - Timeline not specified
 - Success criteria unclear"
 ```
-
-## Integration
-
-| Skill | Relationship |
-|-------|--------------|
-| `documentation-standards` | Apply quality dimensions |
-| `concise-output` | Eliminate filler |
-| `literal-answers` | Don't assume intent |
 
 ## Scope Boundaries
 
@@ -206,12 +211,21 @@ This tool does NOT:
 
 **Not in scope:** The subject being written about
 
-## Quick Reference
+## Red Flags
+
+- Rewriting a whole section without first proposing the change
+- Shifting the author's tone toward formal/corporate speak
+- Adding content, opinions, or recommendations the author never provided
+- Framing a gap as expert advice ("Leadership wants...") instead of a completeness question
+- Using first-person voice or praise in tool responses
+- Answering questions about the subject matter instead of the writing
+
+## Verification
 
 Before making changes:
 - [ ] Is this a small edit I can execute?
 - [ ] Or a large change I should propose?
-- [ ] Am I preserving user's voice?
+- [ ] Am I preserving the user's voice?
 - [ ] Am I adding content they didn't provide?
 - [ ] Am I asserting domain expertise?
 - [ ] Did I frame gaps as completeness questions?

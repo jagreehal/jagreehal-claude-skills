@@ -1,39 +1,47 @@
 ---
 name: implementation-planning
-description: "Use when you have a design or requirements for a multi-step task, before writing code. Creates bite-sized TDD task plans with exact file paths, complete code, and verification steps."
-version: 1.0.0
+description: Creates bite-sized, TDD-ordered implementation plans with exact file paths, complete copy-pasteable code, and explicit verification steps, written for an executor with zero prior context. Use when you have an approved design or clear requirements for a multi-step task and are about to write code. Use before features with 3+ steps, complex refactoring, or any change that coordinates edits across multiple files.
+version: 1.1.0
 ---
 
 # Implementation Planning
 
-Write comprehensive implementation plans assuming the executor has zero context. Document everything: which files to touch, complete code, how to test. Bite-sized tasks. DRY. YAGNI. TDD.
+## Overview
 
-## The Iron Law
+Write a comprehensive implementation plan that assumes the executor has zero context about the codebase. Document everything: which files to touch, the complete code to write, and how to verify each step. Tasks are bite-sized, the plan is DRY, scope is YAGNI, and every task follows TDD. A good plan is the difference between an agent that completes work reliably and one that produces a tangled mess that needs reworking.
+
+The core principle is an iron law:
 
 ```
 NO IMPLEMENTATION WITHOUT A PLAN FIRST
 ```
 
-For multi-step tasks, write the plan before writing code.
+For any multi-step task, write the plan before writing code. Implementation without a plan is just typing.
 
 ## When to Use
 
-- MUST: Before implementing features with 3+ steps
-- MUST: Before complex refactoring
-- SHOULD: When multiple files need coordinated changes
-- MAY: Skip for single-file, single-function changes
+- Before implementing a feature with 3+ steps
+- Before complex refactoring
+- When multiple files need coordinated changes
+- When the implementation order isn't obvious
+
+**When NOT to use:** Single-file, single-function changes where the scope is obvious. A two-step change does not need a plan document.
+
+**Related:** The design must be approved via [design-exploration](../design-exploration/SKILL.md) before planning. Tasks follow the strict red-green-refactor loop in [tdd-workflow](../tdd-workflow/SKILL.md). Execute the plan inside an isolated [git-worktrees](../git-worktrees/SKILL.md) workspace, and split independent tasks across [parallel-agent-dispatch](../parallel-agent-dispatch/SKILL.md) when work can be parallelized.
 
 ## Bite-Sized Task Granularity
 
-Each step is ONE action (2-5 minutes):
+Each step is ONE action, roughly 2-5 minutes of work:
 
 ```markdown
-1. Write the failing test - step
-2. Run it to verify it fails - step
-3. Implement minimal code to pass - step
-4. Run tests to verify they pass - step
-5. Commit - step
+1. Write the failing test
+2. Run it to verify it fails
+3. Implement minimal code to pass
+4. Run tests to verify they pass
+5. Commit
 ```
+
+If a step contains the word "and", it is probably two steps.
 
 ## Plan Structure
 
@@ -118,29 +126,20 @@ git commit -m "feat(user): add getUser with NOT_FOUND handling"
 \`\`\`
 ```
 
-## MUST/SHOULD/NEVER Rules
+## Rules
 
-### MUST
+| Rule | Detail |
+|------|--------|
+| Exact file paths | Never "in the appropriate file"; always the full path |
+| Complete code | Never "add validation logic"; write the actual code |
+| Exact commands | Always include the command and its expected output |
+| TDD cycle | test → fail → implement → pass → commit, every task |
+| Save the plan | Write to `docs/plans/YYYY-MM-DD-<feature-name>.md` |
+| fn(args, deps) | New functions use the `fn(args, deps)` pattern |
+| Result types | Error handling uses Result types |
+| Reference lines | Cite line numbers for modifications |
 
-- MUST: Include exact file paths (never "in the appropriate file")
-- MUST: Include complete code (never "add validation logic")
-- MUST: Include exact commands with expected output
-- MUST: Follow TDD cycle (test → fail → implement → pass → commit)
-- MUST: Save plans to `docs/plans/YYYY-MM-DD-<feature-name>.md`
-
-### SHOULD
-
-- SHOULD: Use fn(args, deps) pattern for new functions
-- SHOULD: Use Result types for error handling
-- SHOULD: Include type definitions in implementation
-- SHOULD: Reference line numbers for modifications
-
-### NEVER
-
-- NEVER: Write vague steps ("add appropriate error handling")
-- NEVER: Skip the verification steps
-- NEVER: Bundle multiple changes in one step
-- NEVER: Assume executor knows the codebase
+**Never** write vague steps, skip verification, bundle multiple changes into one step, or assume the executor knows the codebase.
 
 ## Plan Quality Checklist
 
@@ -150,7 +149,7 @@ Before finalizing:
 - [ ] All file paths are exact
 - [ ] All code is complete and copy-pasteable
 - [ ] All commands include expected output
-- [ ] TDD cycle is clear for each task
+- [ ] The TDD cycle is clear for each task
 - [ ] Commit messages follow project conventions
 
 ## Execution Handoff
@@ -160,14 +159,24 @@ After saving the plan:
 ```
 Plan complete and saved to `docs/plans/<filename>.md`.
 
-Ready to execute? I'll follow TDD workflow for each task.
+Ready to execute? I'll follow the TDD workflow for each task.
 ```
 
-## Integration
+## Red Flags
 
-| Skill | Relationship |
-|-------|--------------|
-| `design-exploration` | Design must be approved before planning |
-| `tdd-workflow` | Tasks follow strict TDD cycle |
-| `fn-args-deps` | New functions use fn(args, deps) pattern |
-| `result-types` | Error handling uses Result types |
+- Starting implementation without a written task list
+- Steps that say "implement the feature" with no concrete code
+- No verification step in a task
+- A single step that touches many files or bundles several changes
+- The plan assumes the executor already knows the codebase
+- Commit messages omitted from tasks
+
+## Verification
+
+Before handing off for execution, confirm:
+
+- [ ] The plan has a header with goal, architecture, and tech stack
+- [ ] Every task follows the test → fail → implement → pass → commit cycle
+- [ ] Every file path is exact and every command states its expected output
+- [ ] No step bundles multiple changes
+- [ ] The plan is saved to `docs/plans/` and ready for handoff

@@ -1,28 +1,45 @@
 ---
 name: design-principles
-description: "Software design beyond syntax. Fail-fast over fallbacks, explicit over implicit, composition over inheritance. Integrates with fn(args, deps) and Result type patterns. Includes 8-dimension design analysis."
-version: 1.2.0
+description: Applies software design rules beyond syntax (fail-fast over fallbacks, explicit over implicit, composition over inheritance, illegal states unrepresentable) and runs an 8-dimension design analysis on code. Use when reviewing or refactoring code for design quality, naming, coupling, type safety, or when deciding how to structure functions, types, and modules.
+version: 1.3.0
 ---
 
 # Design Principles
 
-Design rules that complement fn(args, deps), Result types, and validation boundaries.
+## Overview
+
+These are design rules that operate above syntax: how to name things, how to model state, where dependencies come from, when to mutate, and when an abstraction earns its keep. They complement the `fn(args, deps)` pattern, Result types, and validation boundaries; together they decide whether code is testable, honest about its failure modes, and navigable months later.
+
+The throughline is the same in every rule: **make the safe thing the explicit thing, and make the wrong thing impossible to express.** Fail fast with context instead of silently coalescing nulls. Use discriminated unions so illegal states won't typecheck. Inject dependencies instead of constructing them inside. Name with domain language so the code reads like the problem. The second half of this skill is an 8-dimension analysis protocol that turns these principles into a systematic, evidence-based code review.
+
+## When to Use
+
+- Reviewing or refactoring code for design quality
+- Deciding how to model state, types, dependencies, or module boundaries
+- Catching naming, coupling, immutability, or type-safety problems
+- Running a structured design analysis on a class or module
+
+**When NOT to use:** Prose or article quality (use [spine-framework](../spine-framework/SKILL.md) or [structured-writing](../structured-writing/SKILL.md)); large-scale architecture across many modules (use [system-architecture](../system-architecture/SKILL.md)).
+
+**Related:** [fn-args-deps](../fn-args-deps/SKILL.md) for explicit dependency injection, [result-types](../result-types/SKILL.md) for fail-fast error handling, [system-architecture](../system-architecture/SKILL.md) for module-scale design, [data-visualization](../data-visualization/SKILL.md) which applies these rules to chart code.
+
+For how this layer fits the whole system, see [`references/architecture.md`](../../references/architecture.md).
 
 ## Critical Rules
 
 | Rule | Enforcement |
 |------|-------------|
-| Fail-fast over fallbacks | No `??` chains - throw clear errors |
+| Fail-fast over fallbacks | No `??` chains; throw clear errors |
 | No `any`, no `as` | Type escape hatches defeat TypeScript |
 | Make illegal states unrepresentable | Discriminated unions, not optional fields |
-| Explicit dependencies | fn(args, deps), never `new X()` inside |
+| Explicit dependencies | `fn(args, deps)`, never `new X()` inside |
 | Domain names only | Never `data`, `utils`, `helpers`, `handler` |
 | No comments | Code should be self-explanatory |
 | Immutable by default | Return new values, don't mutate |
 
 ## Fail-Fast Over Fallbacks
 
-**Never use nullish coalescing chains:**
+Never use nullish coalescing chains; they hide bugs and turn a clear failure into a confusing one downstream.
 
 ```typescript
 // WRONG - Hides bugs, debugging nightmare
@@ -42,7 +59,7 @@ return user.profile.name;
 
 ## No Type Escape Hatches
 
-**Forbidden without explicit user approval:**
+Forbidden without explicit user approval:
 
 ```typescript
 // FORBIDDEN
@@ -53,7 +70,7 @@ const z = something as unknown as OtherType;
 // @ts-expect-error
 ```
 
-**There is always a type-safe alternative:**
+There is always a type-safe alternative:
 
 ```typescript
 // Instead of `as`, use type guards
@@ -72,7 +89,7 @@ const user = UserSchema.parse(data);  // Zod validates and types
 
 ## Make Illegal States Unrepresentable
 
-**Use discriminated unions, not optional fields:**
+Use discriminated unions, not optional fields:
 
 ```typescript
 // WRONG - Illegal states possible
@@ -89,16 +106,17 @@ type Order =
   | { status: 'cancelled'; items: Item[]; cancelReason: string };
 ```
 
-**If a state combination shouldn't exist, make the type forbid it.**
+If a state combination shouldn't exist, make the type forbid it.
 
 ## Domain Names Only
 
-**Forbidden generic names:**
+Forbidden generic names:
+
 - `data`, `info`, `item`
 - `utils`, `helpers`, `common`, `shared`
 - `manager`, `handler`, `processor`, `service` (when vague)
 
-**Use domain language:**
+Use domain language:
 
 ```typescript
 // WRONG
@@ -118,7 +136,7 @@ const priceFormatter = { formatCurrency };
 
 ## No Code Comments
 
-Comments indicate failure to express intent in code:
+Comments indicate a failure to express intent in code:
 
 ```typescript
 // WRONG - Comment explains unclear code
@@ -136,13 +154,14 @@ function isActiveAdmin(user: User): boolean {
 ```
 
 **Acceptable comments:**
-- `// TODO:` with ticket reference
-- Legal/license headers
+
+- `// TODO:` with a ticket reference
+- Legal / license headers
 - Complex regex explanations (but prefer named patterns)
 
 ## Immutability by Default
 
-**Return new values, don't mutate inputs:**
+Return new values, don't mutate inputs:
 
 ```typescript
 // WRONG - Mutates input
@@ -160,11 +179,13 @@ function addItem(order: Order, item: Item): Order {
 ```
 
 **Prefer:**
+
 - `const` over `let`
 - Spread (`...`) over mutation
-- `map`/`filter`/`reduce` over `forEach` with mutation
+- `map` / `filter` / `reduce` over `forEach` with mutation
 
 **When mutation IS acceptable:**
+
 - Building arrays in loops (push is faster than spread for large arrays)
 - Performance-critical hot paths (measure first)
 - Local scope only (never mutate inputs, only local variables)
@@ -182,7 +203,7 @@ function processLargeDataset(items: Item[]): ProcessedItem[] {
 
 ## Feature Envy Detection
 
-**When a function uses another object's data more than its own, move the logic:**
+When a function uses another object's data more than its own, move the logic:
 
 ```typescript
 // FEATURE ENVY - obsessed with Order's internals
@@ -206,11 +227,11 @@ function createInvoice(order: Order): Invoice {
 }
 ```
 
-**Detection:** Count references to `this` vs external objects. More external? Feature envy.
+**Detection:** Count references to `this` versus external objects. More external? Feature envy.
 
-## YAGNI - You Aren't Gonna Need It
+## YAGNI: You Aren't Gonna Need It
 
-**Don't build for hypothetical future needs:**
+Don't build for hypothetical future needs:
 
 ```typescript
 // WRONG - Speculative generalization
@@ -230,7 +251,7 @@ interface PaymentProcessor {
 // Add refund() when requirements actually demand it
 ```
 
-**"But we might need it" is not a requirement.**
+"But we might need it" is not a requirement.
 
 ## Object Calisthenics (Adapted)
 
@@ -287,91 +308,65 @@ function process(orders: Order[]) {
 
 | Principle | Relates To |
 |-----------|------------|
-| Explicit deps | fn-args-deps pattern |
+| Explicit deps | [fn-args-deps](../fn-args-deps/SKILL.md) pattern |
 | Type safety | strict-typescript, validation-boundary |
-| Fail-fast | result-types (use err(), not throw) |
+| Fail-fast | [result-types](../result-types/SKILL.md) (use `err()`, not throw) |
 | Immutability | Result types are immutable |
 | No comments | critical-peer challenges unclear code |
 
-## When Tempted to Cut Corners
-
-| Temptation | Instead |
-|------------|---------|
-| Use `??` chain | Fail fast with clear error |
-| Use `any` or `as` | Fix the types properly |
-| Name it `data` or `utils` | Use domain language |
-| Write a comment | Make code self-explanatory |
-| Mutate a parameter | Return new value |
-| Build "for later" | Build what you need now |
-| Add `else` branch | Use early return |
-
 ## 8-Dimension Design Analysis Protocol
 
-Use this framework for systematic code review across design dimensions.
+A systematic, evidence-based review across eight design dimensions. Use it at class or module level for design-quality assessment, refactoring-opportunity identification, design-focused code review, architecture evaluation, and pattern/anti-pattern detection.
 
-### When This Activates
+**Scope:** Small-scale analysis of a single class, module, or small set of related files.
 
-Use this protocol when analyzing code at class or module level for:
-- Design quality assessment
-- Refactoring opportunity identification
-- Code review for design improvements
-- Architecture evaluation
-- Pattern and anti-pattern detection
+### Step 1: Understand the Code (REQUIRED)
 
-**Scope:** Small-scale analysis (single class, module, or small set of related files)
+Auto-invoke the `code-flow-analysis` skill FIRST. Before analyzing, you MUST understand:
 
-### The Protocol
-
-#### Step 1: Understand the Code (REQUIRED)
-
-**Auto-invoke the `code-flow-analysis` skill FIRST.**
-
-Before analyzing, you MUST understand:
 - Code structure and flow (file:line references)
-- Class/method responsibilities
+- Class / method responsibilities
 - Dependencies and relationships
 - Current behavior
 
-**CRITICAL:** Never analyze code you don't fully understand. Evidence-based analysis requires comprehension.
+Never analyze code you don't fully understand. Evidence-based analysis requires comprehension.
 
-#### Step 2: Systematic Dimension Analysis
+### Step 2: Systematic Dimension Analysis
 
-Evaluate the code across **8 dimensions** in order. For each dimension, identify specific, evidence-based findings.
+Evaluate the code across the **8 dimensions** below, in order. For each dimension, identify specific, evidence-based findings.
 
-#### Step 3: Generate Findings Report
+### Step 3: Generate Findings Report
 
-Provide structured output with:
-- Severity levels (🔴 Critical, 🟡 Suggestion)
-- File:line references for ALL findings
-- Concrete examples (actual code)
-- Actionable recommendations
-- Before/after code where helpful
+Provide structured output with severity levels, file:line references for ALL findings, concrete code examples, actionable recommendations, and before/after code where helpful.
 
-### Important Rules
+### Rules
 
 **ALWAYS:**
+
 - Auto-invoke `code-flow-analysis` FIRST
 - Provide file:line references for EVERY finding
-- Show actual code snippets (not abstractions)
-- Be specific, not generic (enumerate exact issues)
+- Show actual code snippets, not abstractions
+- Be specific: enumerate exact issues
 - Justify severity levels (why Critical vs Suggestion)
-- Focus on evidence-based findings (no speculation)
+- Focus on evidence-based findings, no speculation
 - Prioritize actionable insights only
 
 **NEVER:**
+
 - Analyze code you haven't understood
 - Use generic descriptions ("this could be better")
-- Guess about behavior (verify with code flow)
-- Skip dimensions (evaluate all 8 systematically)
+- Guess about behavior; verify with code flow
+- Skip dimensions; evaluate all 8 systematically
 - Suggest changes without showing code examples
-- Use words like "probably", "might", "maybe" without evidence
-- Highlight what's working well (focus only on improvements)
+- Use "probably", "might", "maybe" without evidence
+- Highlight what's working well; focus only on improvements
 
 **SKIP:**
-- Trivial findings (nitpicks that don't improve design)
-- Style preferences (unless it affects readability/maintainability)
-- Premature optimizations (performance without evidence)
-- Subjective opinions (stick to principles and evidence)
+
+- Trivial findings and nitpicks that don't improve design
+- Style preferences, unless they affect readability/maintainability
+- Premature optimizations without evidence
+- Subjective opinions; stick to principles and evidence
 
 ### 1. Naming
 
@@ -395,7 +390,7 @@ class OrderTotalCalculator {
 
 ### 2. Coupling & Cohesion
 
-**Feature Envy:** Method uses >3 properties of another object.
+**Feature Envy:** a method uses more than three properties of another object.
 
 ```typescript
 // WRONG - Feature Envy
@@ -430,7 +425,7 @@ class UserProfile {
 
 ### 4. Domain Integrity
 
-**Anemic Domain Model:** Entities with only getters/setters, logic in services.
+**Anemic Domain Model:** entities with only getters/setters, logic stranded in services.
 
 ```typescript
 // WRONG - Anemic + Tell Don't Ask violation
@@ -456,7 +451,7 @@ class Order {
 class PlaceOrderUseCase {
   placeOrder(orderId: string) {
     const order = repository.load(orderId);
-    order.place();  // Telling, order enforces invariant
+    order.place();  // Telling — order enforces its own invariant
   }
 }
 ```
@@ -466,9 +461,9 @@ class PlaceOrderUseCase {
 | Check | Violation |
 |-------|-----------|
 | `any` keyword | Type safety abandoned |
-| `as` assertions | Lying to compiler |
+| `as` assertions | Lying to the compiler |
 | Primitive obsession | `string` for domain concepts |
-| Stringly-typed | `status: string` instead of union |
+| Stringly-typed | `status: string` instead of a union |
 
 ```typescript
 // WRONG
@@ -485,23 +480,24 @@ status: OrderStatus;
 |-------|-----------|
 | Dead code | Unused imports, methods |
 | Duplication | >3 lines repeated |
-| Over-abstraction | Interface with single implementation |
+| Over-abstraction | Interface with a single implementation |
 | YAGNI | Building for hypothetical needs |
 
 ### 7. Object Calisthenics
 
 | Rule | Check |
 |------|-------|
-| One indentation level | >1 level nesting = violation |
+| One indentation level | >1 level of nesting = violation |
 | No ELSE keyword | Use early return |
 | Small entities | Methods <20 lines, files <200 lines |
 
 ### 8. Performance
 
-Only flag if:
-1. Evidence of actual inefficiency
-2. Improvement is significant
-3. Fix doesn't harm readability
+Only flag when all three hold:
+
+1. There's evidence of actual inefficiency
+2. The improvement is significant
+3. The fix doesn't harm readability
 
 ```typescript
 // WRONG - O(n²)
@@ -516,9 +512,33 @@ items.forEach(item => {
 });
 ```
 
+## Common Rationalizations
+
+| Rationalization | Reality |
+|------------|---------|
+| "A `??` fallback is safer than throwing" | It buries the bug. The failure resurfaces later with no context. Fail fast. |
+| "One `as` cast won't hurt" | It lies to the compiler, and the next reader trusts the lie. Use a type guard. |
+| "`data` / `utils` is fine, everyone knows what it means" | Nobody does. Domain names carry the intent the type can't. |
+| "I'll generalize this interface now to save time later" | YAGNI. The shape you guess at rarely matches the requirement that arrives. |
+| "A comment is easier than renaming" | The comment rots; the name doesn't. Make the code say it. |
+| "Mutating the parameter is fine, the caller doesn't care" | Until it does, silently. Return a new value. |
+
+## Red Flags
+
+- `??` chains masking missing data instead of failing fast
+- Any `any`, `as`, `@ts-ignore`, or `@ts-expect-error` without explicit approval
+- Optional fields encoding states that should be a discriminated union
+- Generic names: `data`, `utils`, `helpers`, `manager`, `handler`, `process()`
+- Comments explaining what unclear code does
+- Functions mutating their inputs
+- Dependencies constructed with `new X()` inside instead of injected
+- Anemic entities with logic stranded in services
+- Functions over 20 lines or files over 200 lines
+- Nesting deeper than two levels, or `else` where an early return fits
+
 ## Design Analysis Output Format
 
-When reviewing code, report findings as:
+When reporting findings:
 
 ```markdown
 ## 🔴 Critical Issues
@@ -532,3 +552,16 @@ When reviewing code, report findings as:
 
 [Same format]
 ```
+
+## Verification
+
+After a design review:
+
+- [ ] Code understood via `code-flow-analysis` before any finding
+- [ ] All 8 dimensions evaluated systematically
+- [ ] Every finding has a file:line reference and a real code snippet
+- [ ] Severity levels justified (Critical vs Suggestion)
+- [ ] No `any` / `as` / `@ts-ignore` left unflagged
+- [ ] No `??` fallback chains hiding missing data
+- [ ] Illegal states made unrepresentable where applicable
+- [ ] Names use domain language, not generic terms

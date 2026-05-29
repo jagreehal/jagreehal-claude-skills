@@ -1,30 +1,36 @@
 ---
 name: fn-args-deps
-description: "Enforce the fn(args, deps) pattern: functions over classes with explicit dependency injection"
-version: 1.0.0
+description: Enforces the fn(args, deps) pattern, business logic as functions with explicit dependency injection instead of classes. Use when writing or refactoring TypeScript business logic, replacing service classes, deciding how to structure dependencies, setting up a composition root, or making functions testable with mocked collaborators.
+version: 1.1.0
 libraries: ["vitest-mock-extended"]
 ---
 
 # Functions Over Classes: fn(args, deps)
 
-## Core Pattern
+## Overview
 
-All business logic functions MUST follow this signature:
+All business logic is written as plain functions with the signature `fn(args, deps)`, never as service classes:
 
-```typescript
-fn(args, deps)
-```
+- **args**: per-call input data (varies on every invocation)
+- **deps**: long-lived collaborators (injected infrastructure: db, logger, mailer)
 
-- **args**: Per-call input data (varies each invocation)
-- **deps**: Long-lived collaborators (injected infrastructure)
+The two parameters are kept separate because they have **different lifetimes**. `args` change every call; `deps` are wired once and reused. Splitting them makes dependency bloat visible at the type level (a function whose `deps` keeps growing is doing too much), keeps composition trivial, and makes every function testable by passing a mock `deps`: no class instantiation, no `beforeEach` wiring, no hidden `this`.
 
-## Why Two Parameters (Not One Object)
+This pattern is the foundation the rest of the architecture builds on: `result-types` defines what these functions return, `validation-boundary` defines what their `args` are trusted to contain, and `testing-strategy` relies on the injected `deps` to mock collaborators.
 
-`args` and `deps` have **different lifetimes**:
-- `args` are per-call data
-- `deps` are long-lived collaborators
+## When to Use
 
-Keeping them separate makes dependency bloat visible and composition easier.
+- Writing any new business-logic function
+- Refactoring a service class into composable functions
+- Deciding whether a dependency should be injected or imported
+- Setting up a composition root to wire dependencies once
+- Making code testable without instantiating heavy objects
+
+**When NOT to use:** Framework-mandated classes (NestJS providers, Express error middleware), stateful resources with a lifecycle (connection pools, caches), and fluent builders. In those cases use a thin class wrapper that delegates to pure `fn(args, deps)` functions. See [When Classes ARE Acceptable](#when-classes-are-acceptable).
+
+**Related:** `result-types` (what the function returns), `validation-boundary` (what `args` are trusted to contain), `testing-strategy` and `writing-tests` (mocking `deps`), `observability` (wrapping these functions), `strict-typescript` (the compiler flags that enforce this).
+
+For how this layer fits the whole system, see [`references/architecture.md`](../../references/architecture.md).
 
 ## Required Behaviors
 
@@ -147,7 +153,7 @@ export type UserRouterDeps = {
 };
 ```
 
-**Rule of thumb:** Default to injecting individually. Group only when functions genuinely travel together. If grouping feels like a "god object", split it.
+**Rule of thumb:** Default to injecting individually. Group only when functions travel together. If grouping feels like a "god object", split it.
 
 ### 5. Inject Only What You'll Mock
 
@@ -271,7 +277,7 @@ export class UserService {
 
 Critics sometimes worry that creating many small objects (`args` objects, `deps` bags, factory functions) increases garbage collection pressure.
 
-**The reality:** Modern V8 engines (Orinoco) use generational garbage collection. Objects that die young—like the temporary objects created during request handling—are reclaimed almost instantly. V8 is *extremely* efficient at this.
+Modern V8 engines (Orinoco) use generational garbage collection. Objects that die young, like the temporary objects created during request handling, are reclaimed almost instantly. V8 is efficient at this.
 
 For I/O-bound web applications:
 
@@ -310,3 +316,36 @@ ESLint rule to prevent infra imports:
   }]
 }]
 ```
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "A class groups related methods nicely" | A module of exported functions groups them just as well, without a constructor that must satisfy every method's deps. |
+| "I'll just inject all deps as one big object" | A god `deps` object hides which function uses what and makes every test wire dependencies it doesn't need. Declare per-function deps types. |
+| "It's easier to `new UserService()` everywhere" | That couples every call site to construction. Wire deps once at the composition root and pass the resulting object around. |
+| "I need to inject the slug helper so I can mock it" | If it's pure (no network, disk, or clock) you never need to mock it. Import it directly; only inject things you'll fake. |
+| "Importing the mailer directly is simpler" | A runtime import couples your domain to infrastructure and makes it unmockable. Use `import type` and inject the instance. |
+| "Allocating all these small objects will hurt GC" | V8's generational GC reclaims short-lived objects almost instantly. A DB query is 10,000x+ slower than an allocation. Optimize for clarity. |
+
+## Red Flags
+
+- A class whose constructor takes dependencies that only some methods use
+- A `deps` object passed to a function that uses fewer than half its fields
+- `import { mailer } from '../infra/mailer'` (runtime import) inside domain code
+- Injecting pure utilities (`slugify`, `randomUUID`) just to mock them
+- A factory/composition step running inside a request handler instead of once at startup
+- Private helper methods relying on `this` to share state between methods
+- A "service" class that has grown past 3-4 methods of pure business logic
+
+## Verification
+
+After writing or refactoring business logic:
+
+- [ ] Every business function has the shape `fn(args, deps)` with a per-function `deps` type
+- [ ] No `deps` field is unused by the function it's passed to
+- [ ] Dependencies are wired once at a composition root, not at call sites
+- [ ] Infrastructure is imported with `import type` only; instances arrive via `deps`
+- [ ] Pure utilities are imported directly, not injected
+- [ ] Any remaining classes are framework wrappers, stateful resources, or builders, not business logic
+- [ ] Tests pass a mocked `deps` (`mock<XDeps>()`) without instantiating a class

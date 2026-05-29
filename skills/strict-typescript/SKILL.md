@@ -1,15 +1,29 @@
 ---
 name: strict-typescript
-description: "Enforce patterns with TypeScript beyond strict:true. Include noUncheckedIndexedAccess, erasableSyntaxOnly, ts-reset, and type-fest. Advanced type patterns and ESLint enforcement."
-version: 1.1.0
+description: Configures TypeScript compiler and type-level patterns beyond strict:true to make unsafe code fail at compile time. Use when setting up or hardening tsconfig.json, choosing compiler flags (noUncheckedIndexedAccess, exactOptionalPropertyTypes, verbatimModuleSyntax, erasableSyntaxOnly), eliminating any/as, installing ts-reset or type-fest, writing branded/template-literal/conditional types, or wiring @typescript-eslint strict-type-checked.
+version: 1.2.0
 libraries: ["@total-typescript/ts-reset", "type-fest"]
 ---
 
-# Enforcing Patterns with TypeScript
+# Strict TypeScript
 
-## Core Principle
+## Overview
 
-`strict: true` is insufficient. Patterns without enforcement are just suggestions. TypeScript can enforce patterns at compile time.
+`strict: true` is the floor, not the ceiling. It still lets through unchecked index access, `undefined`-as-present optional properties, runtime-only syntax, and `any` leaks from the standard library. Patterns without compile-time enforcement are suggestions: an agent or a tired engineer will drift from them the moment types stop complaining.
+
+This skill turns intent into compiler errors: a hardened `tsconfig.json`, `ts-reset` to plug `any` leaks, type-level patterns (`satisfies`, branded types, discriminated unions) that encode invariants, and `@typescript-eslint` rules that ban the escape hatches. The stricter the config, the less the type system has to guess, which also makes the compiler faster.
+
+## When to Use
+
+- Bootstrapping or auditing a `tsconfig.json` for a production project
+- Deciding which compiler flags to enable beyond `strict: true`
+- Eliminating `any` / `as` from a codebase
+- Encoding domain invariants in types (IDs that can't be swapped, exhaustive unions)
+- Enforcing type safety at build time via ESLint so violations fail CI
+
+**When NOT to use:** prototypes or throwaway scripts where iteration speed beats safety, or runtime input validation, which belongs at the boundary with Zod (see [`validation-boundary`](../validation-boundary/SKILL.md)).
+
+**Related:** [`pattern-enforcement`](../pattern-enforcement/SKILL.md) (ESLint architectural rules), [`validation-boundary`](../validation-boundary/SKILL.md) (runtime parsing of `unknown`), [`fn-args-deps`](../fn-args-deps/SKILL.md) (the pattern `verbatimModuleSyntax` protects), [`result-types`](../result-types/SKILL.md) (discriminated unions for errors).
 
 ## Required tsconfig.json
 
@@ -239,7 +253,7 @@ import { db } from './database';       // Runtime, keep as-is
 // to determine if an import is actually used at runtime
 ```
 
-The flags we recommend aren't just about safety—they're also about performance. Stricter code is faster to compile because it's more explicit about intent.
+The flags we recommend aren't only about safety. They also improve performance: stricter code is faster to compile because it's more explicit about intent.
 
 ## ESLint Enforcement
 
@@ -264,13 +278,13 @@ Ban unsafe patterns with tooling:
 
 ## Type Narrowing (Never Use `as`)
 
-### WRONG - Type Assertion
+### WRONG: Type Assertion
 
 ```typescript
 const user = data as User;  // Lying to compiler
 ```
 
-### CORRECT - Type Guard
+### CORRECT: Type Guard
 
 ```typescript
 function isUser(x: unknown): x is User {
@@ -282,7 +296,7 @@ if (isUser(data)) {
 }
 ```
 
-### CORRECT - Discriminated Union
+### CORRECT: Discriminated Union
 
 ```typescript
 type ApiResponse =
@@ -296,7 +310,7 @@ function handleResponse(response: ApiResponse) {
 }
 ```
 
-### CORRECT - Zod Validation
+### CORRECT: Zod Validation
 
 ```typescript
 const data: unknown = JSON.parse(input);
@@ -398,15 +412,33 @@ tsc --extendedDiagnostics
 | **tsup/esbuild** | Ultra-fast transpilation (libraries) |
 | **tsc** | Type checking (always, regardless of bundler) |
 
-## The Rules
+## Common Rationalizations
 
-1. **Enable noUncheckedIndexedAccess** - Handle missing array/object elements
-2. **Enable exactOptionalPropertyTypes** - Optional means missing, not undefined
-3. **Enable verbatimModuleSyntax** - Type-only imports stay type-only
-4. **Enable erasableSyntaxOnly** - No enums, no parameter properties
-5. **Install ts-reset** - Fix JSON.parse and other any leaks
-6. **Use satisfies and as const** - Keep literal types, validate shapes
-7. **Install Total TypeScript extension** - Better error messages in VS Code
-8. **Never use `any` or `as`** - Type guards and Zod instead
-9. **ESLint strict-type-checked** - Enforce at build time
-10. **Avoid barrel files** - Direct imports for build performance
+| Rationalization | Reality |
+|---|---|
+| "`strict: true` is enough" | It leaves index access, optional properties, and `JSON.parse` unsafe. The gaps are where production bugs live. |
+| "I'll just cast it with `as` for now" | `as` tells the compiler to stop checking. The mismatch it hides surfaces at runtime instead. Use a type guard or Zod. |
+| "`noUncheckedIndexedAccess` adds too many `undefined` checks" | Those checks are the bugs you didn't write yet. `arr[i]` can be `undefined`. |
+| "Enums are fine, everyone uses them" | They emit JavaScript and break native TS runners. `as const` objects are erasable and give the same safety. |
+| "Branded types are overkill" | A `UserId` passed where a `PostId` is expected is a silent data-corruption bug a brand catches for free. |
+| "Barrel files keep imports tidy" | They wreck tree-shaking and breed circular dependencies. Import directly. |
+
+## Red Flags
+
+- `tsconfig.json` with `strict: true` but none of the supplementary flags
+- `as` assertions or `any` outside of test fixtures
+- `// @ts-ignore` / `// @ts-expect-error` without an explanation comment
+- `enum` or constructor parameter properties (`constructor(public x)`): not erasable
+- `JSON.parse(...)` whose result flows into logic without validation
+- `index.ts` files that only re-export (`export * from './x'`)
+- ESLint type-safety rules set to `'warn'` instead of `'error'`
+
+## Verification
+
+- [ ] `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, and `erasableSyntaxOnly` are all enabled
+- [ ] `ts-reset` is installed and imported once via `reset.d.ts`
+- [ ] No `any` or `as` in source (test fixtures aside); narrowing uses type guards, discriminated unions, or Zod
+- [ ] Literal config objects use `satisfies`; constant tuples use `as const`
+- [ ] `@typescript-eslint/strict-type-checked` is extended and unsafe rules are `'error'`
+- [ ] No barrel files in hot import paths
+- [ ] `tsc --noEmit` passes clean

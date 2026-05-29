@@ -1,176 +1,157 @@
 ---
 name: research-first
-description: "Research-driven investigation. Validate solutions and explore documentation before presenting. Never ask questions you can answer yourself through research."
-version: 1.0.0
+description: Researches and validates answers before presenting them, so the user never has to do homework you could have done yourself. Use when about to recommend a command, library, or config; when tempted to ask "what version/framework/database are you using?"; when a solution is untested ("this should work"); or when the answer is a verifiable fact rather than a user preference.
+version: 1.1.0
 ---
 
 # Research First
 
-Validate before proposing. Never ask lazy questions.
+## Overview
 
-## Core Principle
+Do the homework so the user doesn't have to. Research thoroughly, validate rigorously, present conversationally. A recommendation you haven't tested is a guess wearing a lab coat. Training data goes stale, APIs change, and "this should work" costs the user an hour of debugging that one `Read` or one `npm install` would have prevented.
 
-Do the homework so users don't have to. Research thoroughly, validate rigorously, present conversationally.
+The discipline has two halves. First: **never ask a question you can answer yourself.** Facts about the project (Node version, module system, framework, database) live in files you can read. Asking the user to recite them signals you didn't look. Second: **never present a solution you haven't validated.** Test the command, verify the syntax against current docs, confirm it fits the user's context, then lead with the answer and show your evidence.
 
-## Critical Rules
+Preferences are the exception. You cannot research whether the user prefers `p-retry` or `cockatiel`, simplicity or features. Those are choices, not facts. Research the facts; ask about the preferences.
 
-| Rule | Enforcement |
-|------|-------------|
-| Validate before presenting | Test commands, verify docs, confirm syntax |
-| Never ask lazy questions | If you can research it, do so |
-| Ask about preferences, not facts | Facts: research. Preferences: ask user |
-| Admit uncertainty | "I'm 60% confident" not "definitely works" |
+## When to Use
 
-## Required Behaviors
+- About to recommend a command, library, config flag, or API
+- Tempted to ask "what version / framework / database / module system are you using?"
+- About to say "this should work" or "you could try…" without having tested it
+- The answer is a verifiable fact (version, file location, whether a feature exists)
+- Building boilerplate or starter patterns that will be copied across the project
 
-### 1. Validate Before Presenting
+**When NOT to use:**
 
-Test solutions before suggesting them:
+- The decision is a genuine user preference (two valid options in tension), not a fact
+- The user explicitly asked for speed over verification ("just give me a quick answer")
+- Pure logic with no external dependency (a loop, a sort, a conditional)
+- Mechanical operations (renames, formatting, file moves)
 
-```
-WRONG - Untested recommendation
-"Try running `npm install --legacy-peer-deps`, that should fix it."
+**Related:** [literal-answers](../literal-answers/SKILL.md): answer the literal question after researching it. [answer-questions-directly](../answer-questions-directly/SKILL.md): research before answering a challenge. [confidence-levels](../confidence-levels/SKILL.md): state how sure you are about what you found. [critical-peer](../critical-peer/SKILL.md): challenge assumptions with researched evidence, not vibes.
 
-CORRECT - Validated recommendation
-I tested this locally and confirmed:
-- `npm install --legacy-peer-deps` resolves the peer dependency conflict
-- The resulting node_modules produces no warnings
-- Tests still pass after installation
-```
-
-### 2. Never Ask Lazy Questions
-
-Questions about facts you could research are violations:
+## The Process
 
 ```
-WRONG - Lazy question (you can research this)
+UNDERSTAND ──→ INVESTIGATE ──→ VALIDATE ──→ PRESENT
+    │              │               │            │
+    ▼              ▼               ▼            ▼
+  What's the    Docs, code,    Test it       Lead with
+  actual goal?  examples       before you     the answer,
+                               suggest it     show evidence
+```
+
+### Step 1: Understand the question
+
+What is the user trying to accomplish, and what constraints already exist? A retry-logic question in an ESM project with native fetch has a different answer than the same question in a CommonJS project on Node 14.
+
+### Step 2: Investigate the facts yourself
+
+Before asking the user anything, gather what the project already tells you:
+
+- Read the dependency file (`package.json`, `pyproject.toml`, `go.mod`) for versions and module system
+- `Grep` / `Glob` for existing patterns and conventions
+- `Read` the implementations you'd be touching
+- Fetch the **specific** official docs page for the feature, not the homepage
+- Search for recent examples only after the official docs
+
+### Step 3: Validate before presenting
+
+- Test the command in a sandbox before suggesting it
+- Verify the syntax against the current version's docs
+- Confirm it integrates with the user's existing code
+
+### Step 4: Present findings
+
+Lead with the recommendation, show the evidence that backs it, and acknowledge limitations honestly. If you're 60% sure, say 60%; don't say "definitely works."
+
+## Research, Don't Ask: Facts vs. Preferences
+
+```
+WRONG — lazy questions (every one is answerable by reading the project)
 "What version of Node are you using?"
 "Does your project use ESM or CommonJS?"
 "What framework is this?"
-
-CORRECT - Research first
-[Read package.json to determine Node version, module type, framework]
-[Then ask about preferences, not facts]
-"I see you're using Node 18 with ESM. For the retry logic,
-do you prefer p-retry (simpler) or cockatiel (more features)?"
-```
-
-### 3. Research Protocol
-
-Follow this sequence:
-
-```
-1. UNDERSTAND the question
-   - What is the user trying to accomplish?
-   - What constraints exist?
-
-2. INVESTIGATE thoroughly
-   - Check official docs (WebFetch)
-   - Search for examples (WebSearch)
-   - Examine codebase patterns (Grep, Glob)
-   - Read existing implementations (Read)
-
-3. VALIDATE solutions
-   - Test commands before suggesting
-   - Verify syntax against current docs
-   - Confirm compatibility with user context
-
-4. PRESENT findings
-   - Lead with recommendation
-   - Show evidence/testing
-   - Acknowledge limitations
-```
-
-### 4. Ask About Preferences, Not Facts
-
-```
-WRONG - Asking about facts
 "What database are you using?"
 "Is authentication already implemented?"
-"Where are your tests located?"
 
-CORRECT - Ask about preferences after researching facts
-[After examining codebase]
-"You're using Postgres with Prisma. For the new user lookup,
-do you want to add it to the existing UserRepository
-or create a separate query file?"
+CORRECT — research the facts, then ask only the preference
+[Read package.json: Node 18, ESM, native fetch]
+[Grep src/api: existing client uses a shared error handler]
+"You're on Node 18 with ESM and native fetch. For retry logic,
+do you prefer p-retry (simpler) or cockatiel (circuit breakers,
+more features)?"
 ```
-
-## Research Tools
-
-| Tool | Use For |
-|------|---------|
-| WebFetch | Retrieve official documentation |
-| WebSearch | Find recent discussions, examples |
-| Grep/Glob | Search codebase for patterns |
-| Read | Examine existing implementations |
-| Bash | Test commands and configurations |
 
 ## Examples
 
-### WRONG - Present Untested Ideas
+### WRONG: present an untested idea
 
 ```
 User: "How do I add retry logic to my fetch calls?"
 
-Claude: "You could try using the fetch-retry library.
-Something like:
+Claude: "You could try the fetch-retry library:
 
-import fetchRetry from 'fetch-retry';
-const fetch = fetchRetry(global.fetch);
+  import fetchRetry from 'fetch-retry';
+  const fetch = fetchRetry(global.fetch);
 
 This should work for your use case."
 ```
 
-**Problem:** No validation that library exists, syntax is correct, or it fits user's context.
+No validation that the library exists, that the syntax is current, or that it fits the project.
 
-### CORRECT - Research Then Present
+### CORRECT: research, validate, then present
 
 ```
 User: "How do I add retry logic to my fetch calls?"
 
-Claude: I checked your package.json and see you're using
-Node 18 with native fetch. I validated these options:
+Claude: I checked your package.json — Node 18 with native fetch.
+I validated these options:
 
-**Recommended: p-retry** (you already have p-* packages)
-- Tested: `npm install p-retry` works with your Node version
-- Integrates with your existing error handling pattern in src/api/client.ts
+Recommended: p-retry (you already depend on p-* packages)
+- Tested: `npm install p-retry` installs clean on Node 18
+- Integrates with the error handler in src/api/client.ts
 
-import pRetry from 'p-retry';
+  import pRetry from 'p-retry';
+  const fetchWithRetry = (url: string) => pRetry(
+    () => fetch(url).then(r => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r;
+    }),
+    { retries: 3 }
+  );
 
-const fetchWithRetry = (url: string) => pRetry(
-  () => fetch(url).then(r => {
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r;
-  }),
-  { retries: 3 }
-);
-
-Want me to add this to your existing API client?
+Want me to wire this into the existing API client?
 ```
 
-## Integration
+## Research Tools
 
-| Skill | Relationship |
-|-------|--------------|
-| `debugging-methodology` | Research evidence before hypothesizing |
-| `critical-peer` | Challenge assumptions with evidence |
-| `confidence-levels` | Express uncertainty honestly |
+| Tool | Use for |
+|------|---------|
+| Read | Examine existing implementations and dependency files |
+| Grep / Glob | Find patterns and conventions in the codebase |
+| WebFetch | Retrieve the specific official documentation page |
+| WebSearch | Find recent discussions and examples (after official docs) |
+| Bash | Test commands and configurations before suggesting them |
 
-## Quick Reference
+## Common Rationalizations
 
-- [ ] Did I research before asking?
-- [ ] Did I validate the solution works?
-- [ ] Am I asking about preferences, not facts?
-- [ ] Did I test commands/syntax before suggesting?
-- [ ] Did I acknowledge limitations honestly?
+| Rationalization | Reality |
+|---|---|
+| "I'm confident about this API" | Confidence is not evidence. Training data contains patterns that look correct and break against the current version. Verify. |
+| "Asking the version is faster than reading the file" | It isn't. You can Read the file in one call, and asking makes the user do your job. |
+| "Fetching docs wastes tokens" | Hallucinating an API wastes more: the user debugs for an hour. One fetch prevents the rework. |
+| "This should work" | "Should" means untested. Either test it and say so, or flag it as unverified. Hedging is the worst option. |
+| "It's a simple task, no need to check" | Simple tasks with wrong patterns become templates copied into ten files. |
+| "I'll just tell them to check the docs" | If you can fetch and read them, do. "Check the docs" offloads your research onto the user. |
 
-## Anti-Patterns
+## Red Flags
 
-| Anti-Pattern | Violation |
-|--------------|-----------|
-| "You could try..." | Untested suggestion |
-| "What X are you using?" | Lazy question - research it |
-| "This should work" | No validation performed |
-| "I assume you want..." | Ask preferences, don't assume |
-| "Check the docs for..." | Fetch and read them yourself |
+- Asking "what version / framework / database are you using?" before reading the project files
+- "You could try…" or "this should work" without having tested it
+- Citing Stack Overflow or a blog post instead of official documentation
+- Recommending an API without knowing which version it applies to
+- "I assume you want…" instead of asking about a genuine preference
+- Delivering a command you never ran
+- Stating a fact you could have verified as if you'd verified it

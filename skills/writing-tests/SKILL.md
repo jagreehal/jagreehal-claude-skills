@@ -1,39 +1,42 @@
 ---
 name: writing-tests
-description: "Principles for writing effective, maintainable tests. Covers naming conventions, assertion best practices, and comprehensive edge case checklists. Based on BugMagnet by Gojko Adzic."
-version: 1.0.0
+description: Writes tests that catch bugs and read like a specification through outcome-based names, specific assertions, one concept per test, and systematic edge-case coverage. Use when authoring or reviewing individual tests, writing the failing test in a TDD RED phase, expanding coverage, or turning a discovered bug into related test cases.
+version: 1.1.0
 libraries: ["vitest", "vitest-mock-extended"]
 ---
 
 # Writing Tests
 
-How to write tests that catch bugs, document behavior, and remain maintainable.
+## Overview
 
-> Based on [BugMagnet](https://github.com/gojko/bugmagnet-ai-assistant) by Gojko Adzic. Adapted with attribution and aligned with fn(args, deps) and Result type patterns.
+This skill governs the inside of an individual test: what to name it, what to assert, and which edge cases to cover. Four rules make a test valuable: test names describe outcomes not actions, assertions match the test title, assertions check specific values not types, and each test verifies one concept.
 
-## Core Principle
+**Why this matters:** A weak test passes whether or not the code is correct, giving false confidence that is worse than no test. Outcome-based names turn the suite into a readable specification: reading the names alone should tell you what the system does. Specific assertions catch specific bugs; `toBeDefined()` catches almost nothing. And bugs cluster: one discovered defect usually signals a misunderstanding that produced several, so each bug found is a prompt to test its neighbors.
 
-Test names describe outcomes, not actions. Assertions match test titles. Specific assertions catch specific bugs. One concept per test.
+> Based on [BugMagnet](https://github.com/gojko/bugmagnet-ai-assistant) by Gojko Adzic. Adapted with attribution and aligned with `fn(args, deps)` and Result type patterns.
+
+## When to Use
+
+- Writing new tests, especially the failing test in a TDD RED phase
+- Reviewing test quality or refactoring tests for maintainability
+- Expanding coverage with edge cases
+- Turning a discovered bug into a cluster of related test cases
+
+**When NOT to use:** Choosing which layer of the pyramid a test belongs to (see [testing-strategy](../testing-strategy/SKILL.md)); driving the overall red-green-refactor loop (see [tdd-workflow](../tdd-workflow/SKILL.md)).
+
+**Related:** [tdd-workflow](../tdd-workflow/SKILL.md) calls this skill during its RED phase; [testing-strategy](../testing-strategy/SKILL.md) decides the test layer and mocking approach; [result-types](../result-types/SKILL.md) and [validation-boundary](../validation-boundary/SKILL.md) define the error and validation outcomes these tests assert on; [fn-args-deps](../fn-args-deps/SKILL.md) supplies the deps shape mocked in each test.
 
 ## Critical Rules
 
 🚨 **Test names describe outcomes, not actions.** "returns empty array when input is null" not "test null input". The name IS the specification.
 
-🚨 **Assertions must match test titles.** If the test claims to verify "different IDs", assert on the actual ID values—not just count or existence.
+🚨 **Assertions must match test titles.** If the test claims to verify "different IDs", assert on the actual ID values, not just count or existence.
 
 🚨 **Assert specific values, not types.** `expect(result.value).toEqual(['First.', ' Second.'])` not `expect(result).toBeDefined()`. Specific assertions catch specific bugs.
 
 🚨 **One concept per test.** Each test verifies one behavior. If you need "and" in your test name, split it.
 
 🚨 **Bugs cluster together.** When you find one bug, test related scenarios. The same misunderstanding often causes multiple failures.
-
-## When This Applies
-
-- Writing new tests (especially during TDD RED phase)
-- Reviewing test quality
-- Expanding test coverage
-- Investigating discovered bugs
-- Refactoring tests to be more maintainable
 
 ## Test Naming
 
@@ -383,7 +386,7 @@ describe('createOrder', () => {
 
 ## Bug Clustering
 
-When you discover a bug, don't stop—explore related scenarios:
+When you discover a bug, don't stop. Explore related scenarios:
 
 1. **Same function, similar inputs** - If null fails, test undefined, empty string
 2. **Same pattern, different locations** - If one endpoint mishandles auth, check others
@@ -401,23 +404,30 @@ it('returns err VALIDATION_ERROR when userId is whitespace', () => {});
 it('returns err VALIDATION_ERROR when userId is null', () => {});
 ```
 
-## When Tempted to Cut Corners
+## Common Rationalizations
 
-- If your test name says "test" or "should work": STOP. What outcome are you actually verifying? Name it specifically.
+| Rationalization | Reality |
+|---|---|
+| "`should work` is a fine test name" | A name that doesn't state the outcome documents nothing. Name the outcome: "returns empty array when input is null". |
+| "`toBeDefined()` proves it works" | It passes on completely wrong data. Assert the specific expected value. |
+| "Asserting count is close enough for 'different IDs'" | The assertion must match the title's claim. Assert that the IDs differ. |
+| "One big test covers more" | Multiple concepts in one test make failures ambiguous. Split until each test has one reason to fail. |
+| "I fixed the bug, one test is enough" | Bugs cluster. The same misunderstanding usually produced neighbors, so test them. |
+| "That edge case won't happen" | It will happen in production, at 3 AM. Use the edge-case checklists. |
 
-- If you're asserting `toBeDefined()` or `toBeTruthy()`: STOP. What value do you actually expect? Assert that instead.
+## Red Flags
 
-- If your assertion doesn't match your test title: STOP. Either fix the assertion or rename the test. They must agree.
-
-- If you're testing multiple concepts in one test: STOP. Split it. Future you debugging a failure will thank you.
-
-- If you found a bug and wrote one test: STOP. Bugs cluster. What related scenarios might have the same problem?
-
-- If you're skipping edge cases because "that won't happen": STOP. It will happen. In production. At 3 AM.
+- Test names containing "test", "should work", "handles errors", or "edge cases"
+- Assertions using `toBeDefined()`, `toBeTruthy()`, or `toHaveLength()` where a value is known
+- An assertion that contradicts or under-checks the test title
+- A test name needing "and" to describe what it verifies
+- A bug fix accompanied by exactly one new test
+- Assertions on internal calls (`toHaveBeenCalledWith`) instead of observable outcomes
+- Edge cases skipped with "that can't happen"
 
 ## Integration with Other Skills
 
-**With TDD Workflow:** This skill guides the RED phase—how to write the failing test well. Use outcome-based naming and specific assertions from the start.
+**With TDD Workflow:** This skill guides the RED phase: how to write the failing test well. Use outcome-based naming and specific assertions from the start.
 
 **With Testing Strategy:** This skill complements the test pyramid. Unit tests (with mocks) and integration tests (with real DB) both benefit from good naming and edge case coverage.
 
@@ -512,3 +522,14 @@ describe('getUser', () => {
 8. **Use Arrange-Act-Assert** - Clear structure makes tests readable
 9. **No vi.mock() for app logic** - Use `mock<DepsType>()` from vitest-mock-extended
 10. **Test Result types explicitly** - Assert on `result.ok` and specific error types
+
+## Verification
+
+- [ ] Every test name states an outcome in "[outcome] when [condition]" form
+- [ ] Each assertion verifies the exact claim in the test title
+- [ ] Assertions check specific values, not `toBeDefined`/`toBeTruthy`
+- [ ] Each test verifies exactly one concept (no "and" in the name)
+- [ ] Result-returning functions assert `result.ok` and the specific error
+- [ ] Relevant edge cases from the checklists are covered
+- [ ] Discovered bugs spawned tests for clustered scenarios
+- [ ] Tests assert observable behavior, not internal calls

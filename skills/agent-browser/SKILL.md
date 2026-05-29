@@ -1,12 +1,29 @@
 ---
 name: agent-browser
-description: "Browser automation for web testing, form filling, screenshots, and data extraction. Ref-based workflow with best practices for reliable automation."
-version: 1.1.0
+description: Automates real browsers from the command line using a ref-based snapshot-then-interact workflow. Use when you need to drive a live browser, navigating pages, filling and submitting forms, clicking buttons, taking screenshots, scraping or extracting data, testing or logging into web apps, mocking network requests, or verifying responsive layouts. Triggers include "open a website", "fill out this form", "take a screenshot", "scrape this page", "test this web app", "log in to a site", "automate browser actions", or any task requiring programmatic web interaction via the agent-browser CLI.
+version: 1.2.0
 ---
 
 # Browser Automation with agent-browser
 
-Automate browser interactions using a ref-based workflow. Navigate, snapshot, interact, repeat.
+## Overview
+
+Automate browser interactions from the command line using a ref-based workflow: navigate, snapshot, interact, repeat. The `snapshot -i` command returns the page's interactive elements as stable refs (`@e1`, `@e2`, ...), so you act on what is rendered rather than guessing CSS selectors. This gives the agent reliable eyes and hands in a real browser without writing brittle scripts.
+
+## When to Use
+
+- Navigating pages and following links or flows
+- Filling and submitting forms, including multi-step wizards
+- Clicking, hovering, dragging, and uploading files
+- Taking screenshots for visual verification or regression comparison
+- Scraping or extracting text, attributes, and values from a page
+- Logging into apps and persisting authenticated state for reuse
+- Mocking or intercepting network requests during tests
+- Verifying responsive layouts across viewports and devices
+
+**When NOT to use:** Backend-only work, CLI tools, or anything that does not render in a browser. For DevTools-level inspection (performance traces, deep accessibility-tree debugging) inside Chrome, prefer a DevTools-based workflow.
+
+**Related:** pairs with `react-development` and `storybook-journeys` for testing UIs you build, and with `ui-design-principles` when verifying that documented component states render correctly in the browser.
 
 ## Installation
 
@@ -198,7 +215,7 @@ agent-browser get text @e1 --json   # For programmatic parsing
 - MUST: Re-snapshot after any navigation or DOM mutation
 - MUST: Use `snapshot -i` (interactive only) to reduce noise
 - MUST: Re-snapshot after clicks that trigger page changes
-- NEVER: Cache refs across page navigations—refs are invalidated
+- NEVER: Cache refs across page navigations; refs are invalidated
 - NEVER: Assume refs persist after form submissions or route changes
 
 ### Selectors
@@ -212,7 +229,7 @@ agent-browser get text @e1 --json   # For programmatic parsing
 
 - MUST: Wait for `networkidle` after form submissions
 - MUST: Use `wait --text "..."` or `wait @ref` for dynamic content
-- NEVER: Use fixed `wait 2000`—flaky and slow
+- NEVER: Use fixed `wait 2000`; flaky and slow
 - SHOULD: Set reasonable timeouts; fail fast on missing elements
 
 ### Forms
@@ -220,7 +237,7 @@ agent-browser get text @e1 --json   # For programmatic parsing
 - MUST: Use `fill` (clears first) for inputs, not `type`
 - MUST: Verify submission with `wait --text` or `wait --url`
 - SHOULD: Snapshot after each step in multi-page flows
-- MUST: Handle validation errors—check for error text after submit
+- MUST: Handle validation errors; check for error text after submit
 
 ### State & Auth
 
@@ -266,7 +283,7 @@ agent-browser get text @e1 --json   # For programmatic parsing
 
 - MUST: Set viewport before navigation, not after
 - SHOULD: Use device presets for consistent mobile testing
-- MUST: Re-snapshot after viewport changes—layout affects refs
+- MUST: Re-snapshot after viewport changes; layout affects refs
 
 ### Network & Mocking
 
@@ -395,6 +412,29 @@ agent-browser wait --text "Upload complete"
 
 ---
 
+## Red Flags
+
+- Caching refs across navigations or form submissions (refs are invalidated, snapshot again)
+- Using fixed `wait 2000` instead of `wait --text`, `wait @ref`, or `wait --load networkidle`
+- Using `type` where `fill` is needed (forgetting to clear the existing value)
+- Reaching for brittle CSS selectors or XPath instead of `@refs` or `find role --name`
+- Submitting a form without verifying the result (no `wait --text` / `wait --url` / re-snapshot)
+- Leaving the browser or named sessions open when done
+- Leaving `network route` intercepts active across unrelated tests
+- Committing `state save` auth files to version control
+- Mixing refs across different `--session` browsers
+
+## Verification
+
+After a browser automation task:
+
+- [ ] Re-snapshotted after every navigation, viewport change, and DOM-mutating action
+- [ ] Used `fill` for inputs and verified submissions with `wait --text` / `wait --url`
+- [ ] Checked `errors` and `console` when an interaction failed silently
+- [ ] Saved auth state for reuse and kept state files out of version control
+- [ ] Closed the browser and any named sessions
+- [ ] Cleared network intercepts and cookies between unrelated scenarios
+
 ## Integration
 
 | Skill | Relationship |
@@ -402,3 +442,4 @@ agent-browser wait --text "Upload complete"
 | `testing-strategy` | E2E test patterns |
 | `react-development` | Testing React UIs |
 | `storybook-journeys` | Visual testing workflows |
+| `ui-design-principles` | Verify documented component states render correctly |

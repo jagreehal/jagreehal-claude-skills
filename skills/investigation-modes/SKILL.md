@@ -1,16 +1,25 @@
 ---
 name: investigation-modes
-description: "Three explicit investigation modes: LEARNING (build understanding), INVESTIGATION (diagnose problems), SOLVING (implement fixes). Prefix messages with mode, ask before transitioning."
-version: 1.0.0
+description: Separates technical work into three explicit, non-overlapping modes (LEARNING to build understanding, INVESTIGATION to diagnose a problem, SOLVING to implement a fix) and prevents drifting between them without the user's consent. Use when analyzing how a system works, debugging or diagnosing a specific failure, or implementing a fix, and especially when a request chains phases with "do X, THEN Y". Every message is prefixed with its mode; mode transitions require user confirmation.
+version: 1.1.0
 ---
 
 # Investigation Modes
 
-Investigate technical problems systematically with explicit modes.
+## Overview
 
-## Core Principle
+Investigate technical problems by operating in one explicit mode at a time. The failure this prevents is mode mixing: an agent asked to *understand* a system then forms a hypothesis about a bug and starts *editing* code, three different kinds of work collapsed into one unreviewed answer. Each mode has a distinct purpose, distinct outputs, and hard boundaries. The agent stays in one lane, announces that lane on every message, and asks before crossing into the next. The user controls the pace; "do X, THEN Y" means complete X, stop, and ask before Y.
 
-Operate in exactly one mode at a time. Ask before transitioning. User controls the pace.
+## When to Use
+
+- Building a mental model of an unfamiliar system or architecture (LEARNING)
+- Diagnosing a specific failure, regression, or incident to find root cause (INVESTIGATION)
+- Implementing a fix once the cause is understood (SOLVING)
+- Any request that chains phases with "first understand, then diagnose" or "investigate, THEN fix"
+
+**When NOT to use:** A trivial, well-scoped change where the cause and fix are already obvious and no diagnosis is needed.
+
+**Related:** [debugging-methodology](../debugging-methodology/SKILL.md), [design-exploration](../design-exploration/SKILL.md), [implementation-planning](../implementation-planning/SKILL.md), [verification-before-completion](../verification-before-completion/SKILL.md), [session-continuity](../session-continuity/SKILL.md).
 
 ## Critical Rules
 
@@ -124,7 +133,7 @@ Wait for user confirmation before proceeding.
 
 ## Examples
 
-### WRONG - Mode Mixing
+### WRONG: Mode Mixing
 
 ```
 User: "Analyze the authentication system"
@@ -136,7 +145,7 @@ Let me fix that now... [starts editing]"
 
 **Problem:** Mixed all three modes without asking.
 
-### CORRECT - Mode Discipline
+### CORRECT: Mode Discipline
 
 ```
 User: "Analyze the authentication system"
@@ -164,7 +173,7 @@ to go deeper on any component?"
 
 ---
 
-### WRONG - Jumping Ahead
+### WRONG: Jumping Ahead
 
 ```
 User: "Investigate the login bug, THEN we'll figure out a fix"
@@ -175,7 +184,7 @@ generation. Here's the fix: [implements fix]"
 
 **Problem:** User said "THEN" - should have stopped after investigation.
 
-### CORRECT - Respecting Sequence
+### CORRECT: Respecting Sequence
 
 ```
 User: "Investigate the login bug, THEN we'll figure out a fix"
@@ -235,9 +244,9 @@ Apply to: CPU, memory, disk, network, connections.
 
 | Skill | Relationship |
 |-------|--------------|
-| `debugging-methodology` | Evidence-based investigation |
-| `observability` | Instrument to gather evidence |
-| `confidence-levels` | Express hypothesis confidence |
+| [debugging-methodology](../debugging-methodology/SKILL.md) | Evidence-based investigation methodology used inside INVESTIGATION |
+| [observability](../observability/SKILL.md) | Instrument the system to gather investigation evidence |
+| [confidence-levels](../confidence-levels/SKILL.md) | Express hypothesis confidence with calibrated language |
 
 ## Anti-Patterns
 
@@ -249,11 +258,21 @@ Apply to: CPU, memory, disk, network, connections.
 | Missing prefix | Forgot `[MODE: X]` |
 | Self-transition | Changed modes without asking |
 
-## Quick Reference
+## Red Flags
 
-Before every message:
+- A message without a `[MODE: X]` prefix
+- Forming a hypothesis while in LEARNING, or proposing a fix while in INVESTIGATION
+- Editing code or config before reaching SOLVING
+- Transitioning modes without asking the user first
+- Entering SOLVING with no prior investigation findings and no flag raised
+- Treating "do X, THEN Y" as permission to do both in one turn
+
+## Verification
+
+Before every message, confirm:
+
 - [ ] Did I prefix with current mode?
 - [ ] Am I staying within mode boundaries?
-- [ ] Did user authorize this mode?
+- [ ] Did the user authorize this mode?
 - [ ] If transitioning, did I ask first?
-- [ ] If user said "THEN", did I stop after first part?
+- [ ] If the user said "THEN", did I stop after the first part?

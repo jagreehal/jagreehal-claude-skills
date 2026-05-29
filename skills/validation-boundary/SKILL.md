@@ -1,25 +1,42 @@
 ---
 name: validation-boundary
-description: "Validate at the boundary with Zod schemas and branded types. Business functions trust validated input."
-version: 1.0.0
+description: Validates untrusted input once at the system boundary with Zod schemas and branded types, so business functions trust their args by contract. Use when handling HTTP request bodies, query params, CLI args, queue messages, env vars, or third-party API responses; when defining Zod schemas or branded types; or when deciding where validation belongs in a TypeScript app.
+version: 1.1.0
 libraries: ["zod"]
 ---
 
 # Validation at the Boundary
 
-## Core Principle
+## Overview
 
-Validation is a **boundary concern**. Check passports once at the border, not at every street corner.
+Validation is a **boundary concern**. You check passports once at the border, not at every street corner. Untrusted input (HTTP bodies, query params, CLI args, queue messages, env vars, third-party responses) is parsed and rejected at the edge of the system. Everything inside the boundary trusts its types by contract.
 
 ```
-External Input (HTTP, CLI, Queue)  <- untrusted
+External Input (HTTP, CLI, Queue, 3rd-party)  <- untrusted
        |
        v
-Boundary Layer (validate with Zod) <- reject bad data here
+Boundary Layer (parse with Zod)               <- reject bad data here
        |
        v
-Business Functions fn(args, deps)  <- args ALREADY valid by contract
+Business Functions fn(args, deps)             <- args ALREADY valid by contract
 ```
+
+This matters because validation scattered through internal code is impossible to reason about: you can never tell whether a given value has been checked, so you re-check defensively everywhere, and bugs hide in the gaps. Concentrating it at the boundary means each business function has one job, and the type system, not runtime guards, guarantees `args` are well-formed. This is what lets [`fn-args-deps`](../fn-args-deps/SKILL.md) functions stay clean and what feeds typed failures into [`result-types`](../result-types/SKILL.md).
+
+## When to Use
+
+- Handling HTTP request bodies, query strings, route params, or headers
+- Reading CLI arguments, environment variables, or config files
+- Consuming queue/event messages
+- **Parsing third-party API responses** (always untrusted; validate shape before use)
+- Defining the input types for a public function or module boundary
+- Introducing branded types for IDs, tokens, or values that must be validated
+
+**When NOT to use:** Do NOT validate between internal functions that already share a type contract, inside utilities called by already-validated code, or on data that came back from your own database. Re-validating trusted data is noise and signals a missing boundary.
+
+**Related:** [`fn-args-deps`](../fn-args-deps/SKILL.md) (the functions whose `args` this protects), [`result-types`](../result-types/SKILL.md) (how domain-validation failures are returned), [`api-design`](../api-design/SKILL.md) (error response shape), [`strict-typescript`](../strict-typescript/SKILL.md) (branded types).
+
+For how this layer fits the whole system, see [`references/architecture.md`](../../references/architecture.md).
 
 ## Parse, Don't Validate
 
@@ -232,3 +249,34 @@ app.post('/users', validateBody(CreateUserSchema), async (req, res) => {
 | Where validate business rules? | Business function |
 | Should fn(args, deps) validate args? | NO. Trust the contract |
 | Error for invalid input? | HTTP 400 (client error) |
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "I'll just check the input inside the function too, to be safe" | Double validation means neither layer is authoritative and the function now has two jobs. Parse once at the boundary; trust the type after. |
+| "It came from our own database, but I'll validate it anyway" | Data that already crossed a boundary (or originated internally) is trusted. Re-validating it is noise that hides where the real boundary is. |
+| "The third-party API always returns the right shape" | External services are untrusted. They change, fail, and can return malicious or instruction-like content. Parse their responses like any other boundary input. |
+| "A plain string is fine for the user ID" | If two same-typed values can be swapped by mistake (userId vs orderId), brand them so the compiler catches the mix-up. |
+| "Throwing inside the business function is simpler than returning a Result for the bad-balance case" | Schema validation belongs at the boundary; *business-rule* failures (insufficient funds, not found) are expected outcomes: return them as `result-types`, don't throw. |
+
+## Red Flags
+
+- `if (!args.email)` or `.length < 2` checks inside a business function
+- The same field validated in a handler and again deeper in the call stack
+- A `fetch().then(r => r.json())` result used without parsing its shape
+- Raw `string` parameters for IDs, tokens, or other easily-confused values
+- A Zod schema defined but only used for types, never `.parse()`d at the edge
+- Validation logic duplicated across multiple handlers instead of shared middleware/schema
+
+## Verification
+
+After wiring up input handling:
+
+- [ ] Every external input is parsed with a Zod schema at the boundary
+- [ ] Business functions accept already-validated types and contain no shape checks
+- [ ] IDs/tokens that could be confused use branded types
+- [ ] Third-party responses are parsed before use
+- [ ] Invalid input returns a consistent error (HTTP 400 / `VALIDATION_FAILED`)
+- [ ] Business-rule failures are returned as Results, not thrown (see [`result-types`](../result-types/SKILL.md))
+- [ ] No re-validation of internal or database-sourced data

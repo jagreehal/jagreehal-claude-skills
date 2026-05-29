@@ -27,7 +27,7 @@ This marketplace contains **10 plugins**. Install only what you need.
 | `testing-tdd` | 4 | TDD workflow: red-green-refactor, test pyramid, performance testing |
 | `communication-behavior` | 6 | Claude style: critical peer, concise output, research-first |
 | `workflow-productivity` | 10 | Session management, verification, git worktrees, parallel agents |
-| `frontend-react` | 4 | React patterns, Storybook, UI design, browser automation |
+| `frontend-react` | 5 | React patterns, testable+storybookable components, Storybook, UI design, browser automation |
 | `documentation-architecture` | 5 | Documentation standards, ADRs, data visualization |
 | `debugging-analysis` | 2 | Evidence-based debugging, code flow analysis |
 | `skill-authoring` | 1 | Guide for creating custom skills |
@@ -134,13 +134,14 @@ Session management, task tracking, and development workflow.
 | `branch-completion` | Guide completion of development work with verification |
 | `create-tasks` | Create well-formed tasks with context and acceptance criteria |
 
-### frontend-react (4 skills)
+### frontend-react (5 skills)
 
 Frontend development with React and modern tooling.
 
 | Skill | Description |
 |-------|-------------|
 | `react-development` | Modern React patterns, technology stack, accessibility |
+| `react-testable-storybookable` | Per-component recipe: prop-driven components, shared MSW, renderWithProviders, the .tsx/.stories/.test trio |
 | `storybook-journeys` | Storybook user journey storyboards with MSW API mocking |
 | `ui-design-principles` | Design systems, implementation-ready interfaces |
 | `agent-browser` | Browser automation for web testing, form filling, screenshots |

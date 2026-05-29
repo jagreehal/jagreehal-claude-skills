@@ -1,15 +1,15 @@
 ---
 name: observability
-description: "Make functions observable with trace() wrapper, structured logging (Pino), and OpenTelemetry. Observability is orthogonal to business logic."
-version: 1.0.0
+description: Makes functions observable with the trace() wrapper, structured logging (Pino), and OpenTelemetry, keeping telemetry orthogonal to business logic. Use when adding tracing or spans to fn(args, deps) functions, emitting structured JSON logs, redacting sensitive data, applying OpenTelemetry semantic conventions, correlating logs with traceId/spanId, or emitting canonical wide-event log lines with autotel.
+version: 1.1.0
 libraries: ["autotel", "pino"]
 ---
 
 # Functions + OpenTelemetry
 
-## Core Principle
+## Overview
 
-Observability implements the **Observer pattern**. Business logic is the subject (produces Results), tracing is the observer (watches without interfering).
+Observability implements the **Observer pattern**: business logic is the subject (it produces `Result`s), tracing is the observer (it watches without interfering). The `trace()` wrapper records spans, maps results to span status, and emits logs, while the wrapped function stays blind to telemetry. This separation means you can add, change, or disable observability without touching business logic, and tests run unchanged because `trace()` is a no-op when tracing is off.
 
 ```
 PURE CORE (Subject)
@@ -23,6 +23,19 @@ OBSERVER LAYER
 ├── Result.error -> span.setStatus(ERROR)
 └── Business logic remains "blind" to telemetry
 ```
+
+## When to Use
+
+- Adding tracing/spans to `fn(args, deps)` functions
+- Replacing string-interpolated logs with structured JSON fields
+- Redacting sensitive data from logs and span attributes
+- Applying OpenTelemetry semantic conventions for attribute names
+- Correlating logs with traces via `traceId`/`spanId`
+- Emitting canonical wide-event log lines (one log per request)
+
+**When NOT to use:** Inside hot loops where span overhead matters more than visibility, or as a substitute for returning proper errors. Telemetry observes results, it does not replace [`result-types`](../result-types/SKILL.md). Do not put logging logic inside business functions; wrap them instead.
+
+**Related:** [`result-types`](../result-types/SKILL.md) (the `Result` whose ok/err drives span status), [`fn-args-deps`](../fn-args-deps/SKILL.md) (the functions `trace()` wraps), [`api-design`](../api-design/SKILL.md) (where `X-Request-ID` originates for correlation), [`resilience`](../resilience/SKILL.md) (tracing retried steps and timeouts).
 
 ## Required Behaviors
 
@@ -316,6 +329,40 @@ const myFunction = trace(
 // 3. Test without caring about tracing
 const result = await myFunction(args, mockDeps);
 ```
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "String logs are easier to read" | They are unqueryable. `logger.info({ userId }, 'msg')` lets you filter and aggregate; interpolation does not. |
+| "I'll add tracing logic inside the function" | That couples business logic to telemetry and breaks the no-op-in-tests property. Wrap with `trace()` instead. |
+| "Custom attribute names are fine" | `userId` won't auto-correlate; `user.id` does. Semantic conventions unlock backend dashboards for free. |
+| "Pino redaction covers us" | Span attributes bypass log redaction and ship to Jaeger/Honeycomb. Redact at both layers, defense in depth. |
+| "We log plenty already" | Many narrow logs are write-optimized noise. One canonical wide event per request is query-optimized signal. |
+| "Tests will need updating for tracing" | They won't. `trace()` is transparent and a no-op when disabled. If tests change, the wrapper leaked into logic. |
+
+## Red Flags
+
+- String interpolation in log messages instead of structured fields
+- Retry, branching, or tracing decisions made inside the business function
+- Custom attribute keys (`userId`, `orderTotal`) instead of semantic conventions (`user.id`, `order.value`)
+- Tokens, passwords, or emails appearing in logs or span attributes
+- Logs with no `traceId`/`spanId` to correlate with traces
+- Many small logs per request instead of one canonical wide event
+- Tests that have to mock or assert on tracing
+
+## Verification
+
+After making a function observable:
+
+- [ ] Logs use structured JSON fields, not string interpolation
+- [ ] Tracing lives in the `trace()` wrapper, not the business function
+- [ ] Attribute names follow OpenTelemetry semantic conventions
+- [ ] Sensitive data is redacted in both Pino and span attributes
+- [ ] `Result` ok/err maps to span status (code 1 / code 2)
+- [ ] Logs carry `traceId`/`spanId` for correlation
+- [ ] One canonical log line per request where wide events are enabled
+- [ ] Existing tests pass unchanged (the function stayed telemetry-blind)
 
 ## The Rules
 

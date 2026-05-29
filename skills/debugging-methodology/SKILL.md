@@ -1,12 +1,16 @@
 ---
 name: debugging-methodology
-description: "Evidence-based debugging with Iron Law discipline. Instrument before guessing, trace before theorizing. Use when encountering any bug, test failure, or unexpected behavior - before proposing fixes."
-version: 1.1.0
+description: Debugs failures by gathering evidence before proposing fixes, enforcing the Iron Law that no fix happens without root-cause investigation first. Use when encountering any bug, test failure, unexpected behavior, intermittent failure, or "it works locally but fails in CI", before changing any code.
+version: 1.2.0
 ---
 
 # Debugging Methodology
 
-Stop guessing. Add instrumentation. Follow the evidence.
+## Overview
+
+Stop guessing. Add instrumentation. Follow the evidence. When something fails, the answer is never "maybe it's X" followed by random changes. Add instrumentation that produces the specific data needed to explain the failure. Measure, don't speculate.
+
+**Why this matters:** Random fixes waste time and create new bugs. Quick patches mask underlying issues. Systematic debugging is faster than guess-and-check thrashing, because every probe you add narrows the search space instead of widening it.
 
 ## The Iron Law
 
@@ -16,11 +20,19 @@ NO FIXES WITHOUT ROOT CAUSE INVESTIGATION FIRST
 
 If you haven't gathered evidence, you cannot propose fixes.
 
-**Rationale:** Random fixes waste time and create new bugs. Quick patches mask underlying issues. Systematic debugging is FASTER than guess-and-check thrashing.
+## When to Use
 
-## Core Principle
+- A test fails after a code change
+- A build breaks or types stop compiling
+- Runtime behavior doesn't match expectations
+- A bug report arrives
+- A failure is intermittent and needs to be pinned down
+- "It works locally but fails in CI"
+- A `Result` returns `err()` when you expected `ok()`
 
-**Measure, don't speculate.** When something fails, the answer is never "maybe it's X" followed by random changes. The answer is: add instrumentation that produces the specific data needed to explain the failure.
+**When NOT to use:** Trivial, self-evident issues with a one-line obvious cause (a typo in a string, a missing import the compiler already names). For those, fix and move on. Everything else gets the protocol.
+
+**Related:** Run [code-flow-analysis](../code-flow-analysis/SKILL.md) BEFORE instrumenting to map the execution path. Use [investigation-modes](../investigation-modes/SKILL.md) to size the effort. Debug `err()` returns with [result-types](../result-types/SKILL.md), instrument `fn(args, deps)` functions per [fn-args-deps](../fn-args-deps/SKILL.md), close out with [verification-before-completion](../verification-before-completion/SKILL.md), and state your certainty with [confidence-levels](../confidence-levels/SKILL.md).
 
 ## The Anti-Pattern
 
@@ -487,7 +499,7 @@ If you catch yourself thinking:
 If 3+ fixes failed:
 1. STOP attempting more fixes
 2. Question the architecture
-3. Consider: Is the pattern fundamentally sound?
+3. Consider: Is the pattern sound?
 4. Discuss with team before attempting more fixes
 
 **Pattern indicating architectural problem:**
@@ -495,21 +507,34 @@ If 3+ fixes failed:
 - Fixes require massive refactoring
 - Each fix creates new symptoms elsewhere
 
-## Rationalization Prevention
+## Common Rationalizations
 
 | Excuse | Reality |
 |--------|---------|
 | "Issue is simple, don't need process" | Simple issues have root causes too |
-| "Emergency, no time for process" | Systematic debugging is FASTER than thrashing |
+| "Emergency, no time for process" | Systematic debugging is faster than thrashing |
 | "Just try this first, then investigate" | First fix sets the pattern. Do it right. |
 | "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
-| "I see the problem, let me fix it" | Seeing symptoms ≠ understanding root cause |
-| "One more fix attempt" (after 2+ failures) | 3+ failures = architectural problem |
+| "I see the problem, let me fix it" | Seeing symptoms is not understanding root cause |
+| "One more fix attempt" (after 2+ failures) | 3+ failures means an architectural problem |
+
+## Verification
+
+A bug is not fixed until:
+
+- [ ] The exact symptom was captured (error message, expected vs actual, inputs)
+- [ ] Evidence from instrumentation explains the failure (not a guess)
+- [ ] The hypothesis was confirmed with a single isolating change
+- [ ] Root cause is identified, not just where it manifests
+- [ ] A regression test exists that fails without the fix and passes with it
+- [ ] The original failure no longer reproduces, end-to-end
+- [ ] All tests pass and the build succeeds
+- [ ] Debug-level instrumentation is removed; structured logging/traces are kept
 
 ## Remember
 
 - **Evidence before hypothesis** - Don't guess, measure
 - **One change at a time** - Know what fixed it
-- **Structured logging pays off** - Pino + OpenTelemetry
+- **Structured logging pays off** - Pino plus OpenTelemetry
 - **Keep observability** - Debug logs become production traces
 - **Use existing traces** - Don't re-instrument if traces already exist

@@ -1,26 +1,58 @@
 ---
 name: testing-strategy
-description: "Test pyramid approach with unit, integration, and load tests. DI enables testability. Use vitest-mock-extended for typed mocks."
-version: 1.0.0
+description: Structures a test suite as a pyramid of unit, integration, load, and chaos tests where dependency injection enables typed mocking without module interception. Use when deciding what kind of test to write, setting up vitest with typed mocks, naming test files by type, or wiring database guardrails and Faker test data.
+version: 1.1.0
 libraries: ["vitest", "vitest-mock-extended", "@faker-js/faker", "k6"]
 ---
 
 # Testing Strategy
 
-## Core Principle
+## Overview
 
-Testability drives design. The fn(args, deps) pattern exists because it makes functions trivially testable without vi.mock or module interception.
+A test suite is a pyramid: many fast unit tests at the base, fewer integration tests above, and a thin top of load and chaos tests. Each layer answers a different question and catches a different class of bug.
 
-## Test Pyramid
+**Why this matters:** Testability drives design. The `fn(args, deps)` pattern makes functions testable: you mock only the dependencies a function uses, with `vitest-mock-extended`, and never reach for `vi.mock` or module interception. When code is hard to test, that is a design signal, not a testing problem. Investing effort according to the pyramid keeps the suite fast and reliable: most failures should surface in milliseconds at the unit layer, not minutes later in a flaky end-to-end run.
 
 ```
-       Triangle  Chaos Tests ("Does it survive failures?")
+       △  Chaos Tests ("Does it survive failures?")
       /|\
      / | \  Load Tests ("Does it scale?")
     /--+--\
    /   |   \ Integration Tests ("Does the stack work?")
   /----+----\
-       |    Unit Tests ("Does the logic work?")
+       |     Unit Tests ("Does the logic work?")
+```
+
+## When to Use
+
+- Deciding which kind of test a given behavior needs
+- Setting up vitest with typed mocks and database guardrails
+- Naming and organizing test files by type
+- Generating realistic test data with Faker
+- Mocking Prisma or other fluent clients in unit tests
+
+**When NOT to use:** Writing the assertions inside an individual test (see [writing-tests](../writing-tests/SKILL.md)); driving the red-green-refactor loop (see [tdd-workflow](../tdd-workflow/SKILL.md)); building load profiles in depth (see [performance-testing](../performance-testing/SKILL.md)).
+
+**Related:** [tdd-workflow](../tdd-workflow/SKILL.md) drives test-first development; [writing-tests](../writing-tests/SKILL.md) covers naming and assertions; [performance-testing](../performance-testing/SKILL.md) expands the load and chaos layers; [fn-args-deps](../fn-args-deps/SKILL.md) is the pattern that makes mocking trivial; [result-types](../result-types/SKILL.md) defines the error shapes these tests assert on.
+
+## Choosing a Test Layer
+
+| Question to answer | Layer | What it touches | Speed |
+|--------------------|-------|-----------------|-------|
+| Does the logic work? | Unit | Mocked deps, no I/O | Milliseconds |
+| Does the stack work? | Integration | Real localhost database | Seconds |
+| Does it scale? | Load | Running service under k6 | Minutes |
+| Does it survive failures? | Chaos | Injected latency/failures | Minutes |
+
+```
+Is it pure logic or a function with injectable deps?
+  → Unit test (mock deps)
+Does it cross a real boundary (DB, file system)?
+  → Integration test (.test.int.ts, localhost only)
+Does it need to hold up under concurrent traffic?
+  → Load test (k6) — see performance-testing
+Does it need to survive dependency failures?
+  → Chaos test — see performance-testing
 ```
 
 ## Required Behaviors
@@ -357,3 +389,32 @@ export default defineConfig({
 5. **Name files by test type** - `.test.ts`, `.test.int.ts`
 6. **Use mockDeep for Prisma** - Handles nested method chains
 7. **Use Faker for test data** - Realistic, consistent test fixtures
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "I'll just mock the whole module with vi.mock" | Module mocks couple tests to import paths and break on refactor. Inject deps and mock the typed interface. |
+| "Everything should be an integration test for confidence" | Slow, flaky suites get ignored. Push logic into unit tests; reserve integration tests for real boundaries. |
+| "Pointing the test DB at staging is fine" | One bad run mutates shared data. Guardrails must fail unless the URL is localhost. |
+| "I'll write a load test for every endpoint" | Load tests belong at the thin top of the pyramid. Cover critical paths, not everything. |
+| "I'll hand-write test fixtures" | Hand-written data hides edge cases and drifts from reality. Use Faker for realistic, unique data. |
+
+## Red Flags
+
+- `vi.mock()` used to replace application modules instead of injecting deps
+- Integration tests that can reach a non-localhost database
+- A suite where most tests are slow integration or end-to-end tests
+- Shared mutable fixtures requiring cleanup between tests
+- Prisma mocked manually instead of with `mockDeep`
+- Test files with no naming convention to distinguish unit from integration
+
+## Verification
+
+- [ ] Each test lives at the right pyramid layer for what it verifies
+- [ ] Unit tests use `mock<DepsType>()`, never `vi.mock` for app logic
+- [ ] Integration tests use `.test.int.ts` and a localhost-only database
+- [ ] Database guardrails throw on any non-localhost URL
+- [ ] Prisma clients are mocked with `mockDeep`
+- [ ] Test data comes from Faker with unique IDs so tests run in parallel
+- [ ] `vitest.setup.ts` resets mocks between tests

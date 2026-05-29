@@ -1,15 +1,15 @@
 ---
 name: api-design
-description: "Build production-ready HTTP APIs with clean handlers, consistent error envelopes, health checks, CORS, and operational excellence."
-version: 1.0.0
+description: Builds production-ready HTTP APIs with thin handlers, consistent error envelopes, health/readiness checks, CORS, idempotency, rate limiting, and graceful shutdown. Use when designing or implementing HTTP endpoints, writing orpc route factories, defining Zod request/response schemas, mapping domain errors to status codes, or adding operational concerns (health checks, X-Request-ID, Retry-After) to a TypeScript API.
+version: 1.1.0
 libraries: ["@orpc/server", "zod"]
 ---
 
 # API Design Patterns
 
-## Core Principle
+## Overview
 
-HTTP handlers have exactly one job: **translate between HTTP and your domain**.
+HTTP handlers have one job: **translate between HTTP and your domain**. They validate input at the boundary, call business logic written as `fn(args, deps)` returning a `Result`, and map that result to an HTTP response. Handlers stay thin and contain no business logic. That keeps them testable, keeps domain code transport-agnostic, and keeps error/operational concerns consistent across every endpoint.
 
 ```
 HTTP Request
@@ -24,7 +24,19 @@ Handler (thin layer)
 HTTP Response
 ```
 
-Handlers should be thin. They don't contain business logic.
+## When to Use
+
+- Designing or implementing new HTTP endpoints
+- Writing orpc route factories with dependency injection
+- Defining request/response contracts with Zod schemas
+- Mapping domain errors to consistent HTTP status codes
+- Adding operational concerns: health checks, CORS, idempotency, rate limiting, graceful shutdown
+
+**When NOT to use:** Internal function-to-function calls (no HTTP boundary), pure domain logic, or background jobs that never face an HTTP request. Validate-at-boundary logic belongs in [`validation-boundary`](../validation-boundary/SKILL.md); error modelling belongs in [`result-types`](../result-types/SKILL.md).
+
+**Related:** [`fn-args-deps`](../fn-args-deps/SKILL.md) (the handler delegates to these), [`validation-boundary`](../validation-boundary/SKILL.md) (input validation at the edge), [`result-types`](../result-types/SKILL.md) (what business logic returns), [`resilience`](../resilience/SKILL.md) (retry/timeout around calls), [`observability`](../observability/SKILL.md) (request IDs and tracing).
+
+For how this layer fits the whole system, see [`references/architecture.md`](../../references/architecture.md).
 
 ## Required Behaviors
 
@@ -314,6 +326,41 @@ describe("getPost", () => {
   });
 });
 ```
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "Just put the business logic in the handler, it's faster" | Handlers coupled to HTTP can't be reused or tested without spinning up a server. Keep them thin; delegate to `fn(args, deps)`. |
+| "Each endpoint can shape its own errors" | Inconsistent error bodies force every consumer to special-case each endpoint. Use one envelope everywhere. |
+| "We'll add health checks before launch" | Orchestrators (k8s, ECS) need `/health` and `/ready` to route traffic safely. Add them from the start. |
+| "Idempotency keys are overkill" | Network retries WILL replay your POST. Without a key, you double-charge or double-create. |
+| "We can retry inside the handler" | Retry belongs at the workflow level, once. See [`resilience`](../resilience/SKILL.md) for why double-retry is dangerous. |
+| "Set X-Request-ID in each handler" | Per-handler header logic drifts. Set it once in middleware so every response is correlated. |
+
+## Red Flags
+
+- Business logic (queries, calculations, side effects) living inside a handler
+- Different error shapes across endpoints, or `ORPCError(code)` not matching `ErrorResponse.code`
+- List endpoints without pagination
+- Mutation endpoints with no `Idempotency-Key` handling
+- No `/health` or `/ready` endpoints
+- `Retry-After` missing on 429 responses
+- Request IDs set inconsistently or not at all
+- Internal error details (stack traces, SQL) leaking into 500 responses
+
+## Verification
+
+After implementing an API surface:
+
+- [ ] Each route is a factory taking injected `deps` and delegates to business logic
+- [ ] Every error response uses the same envelope and the code matches the `ORPCError` code
+- [ ] Domain errors map to status codes via a single shared mapping
+- [ ] `/health` (200) and `/ready` (200/503) endpoints exist
+- [ ] Mutations require and honor an `Idempotency-Key`
+- [ ] 429 responses include `Retry-After`; shutdown drains with 503
+- [ ] `X-Request-ID` is set centrally in middleware
+- [ ] Each route has a co-located test exercising success and error paths
 
 ## Quick Reference
 

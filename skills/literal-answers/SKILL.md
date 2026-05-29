@@ -1,199 +1,170 @@
 ---
 name: literal-answers
-description: "Treat questions as literal questions. Answer them honestly without interpreting as hidden instructions. STOP after answering - don't immediately act on assumed implications."
-version: 1.0.0
+description: Treats a question as a question, not as a hidden instruction, then answers honestly and stops before acting on assumed intent. Use when the user asks "will that work?", "have you considered X?", "is this the best approach?", "what happens if Y?", or otherwise probes your reasoning, and you feel the pull to read it as "change direction" and start doing instead of answering.
+version: 1.1.0
 ---
 
 # Literal Answers
 
-Questions are questions. Not hidden instructions. Answer them.
+## Overview
 
-## Core Principle
+Questions are questions. When the user asks one, answer it; don't decode it as an indirect order telling you what to do. "Will that really work?" is a request for your honest assessment, not a coded instruction to abandon the plan. "Have you considered Redis?" is asking whether you considered it, not telling you to switch. The cost of getting this wrong is high: you discard a working approach, do unrequested work, and leave the user wondering why their question triggered a U-turn.
 
-When users ask questions, answer literally. Don't interpret them as indirect instructions telling you what to do.
+The fix is a posture with three beats: **answer honestly, stop, ask what they want to do with the answer.** Answering is half the job. The other half is *not* acting on what you imagine the answer implies. Let the user own the decision the answer informs.
 
-## Critical Rules
+This skill is the conceptual model: the "why questions aren't orders" principle, the decision flowchart, and the answer-stop-ask loop. Its sibling [answer-questions-directly](../answer-questions-directly/SKILL.md) is the trigger-level enforcement: it fires on the specific surface patterns (`?`, "shouldn't we…?", "doesn't that…?") and drills the per-question behaviors. Read this one for the mental model; read that one for the reflex.
 
-| Rule | Enforcement |
-|------|-------------|
-| Answer literally | What they asked, not what you think they imply |
-| Be honest | About confidence, risks, trade-offs |
-| STOP after answering | Don't immediately act on perceived intent |
-| Ask, don't assume | If answer reveals problem, ask for direction |
+## When to Use
 
-## The Problem
+- The user asks about a decision you made ("why did you…?", "is this the best approach?")
+- The user raises an alternative ("have you considered X?") and you're tempted to switch to it
+- The user expresses doubt ("are you sure…?", "will that work?") and you read it as rejection
+- The user points out a flaw and you start fixing it before they asked you to
 
-Questions get misinterpreted as implicit instructions:
+**When NOT to use:**
 
-| Question | Wrong Interpretation |
-|----------|---------------------|
-| "Will that really work?" | "That won't work, pick something else" |
-| "Have you considered X?" | "You should do X" |
-| "What happens if Y?" | "Y is a problem, address it" |
-| "Is this the best approach?" | "Find a better approach" |
+- The user gave an explicit instruction, not a question ("switch to Redis", "merge those tasks")
+- The message is a pure information request with no decision attached ("what does this function do?")
+- The user already told you to act on whatever your answer reveals
 
-## Required Behavior
+**Related:** [answer-questions-directly](../answer-questions-directly/SKILL.md): the trigger-pattern enforcement of this same principle; pair them. [critical-peer](../critical-peer/SKILL.md): both demand honest, direct responses over agreeable ones. [confidence-levels](../confidence-levels/SKILL.md): answer questions with honest uncertainty attached. [research-first](../research-first/SKILL.md): investigate the facts before answering.
 
-### Answer → Stop → Ask
+## The Posture: Answer → Stop → Ask
 
 ```
 User question → Answer honestly → STOP → Ask what they want to do
 ```
 
-Do NOT: Answer → Immediately act on assumed intent
+Do NOT: `Answer → immediately act on assumed intent`.
+
+The most common misreadings, and what the question actually is:
+
+| Question | Wrong reading | What it actually is |
+|----------|---------------|---------------------|
+| "Will that really work?" | "That won't work, pick something else" | A request for your honest confidence |
+| "Have you considered X?" | "You should do X" | Asking whether you weighed X |
+| "What happens if Y?" | "Y is a problem, fix it" | A request to trace the consequence |
+| "Is this the best approach?" | "Find a better approach" | A request to justify or compare |
+| "Are you sure about Z?" | "You're wrong about Z" | A request to defend your reasoning |
 
 ## Examples
 
-### WRONG - Interpret as Instruction
+### WRONG: interpret the question as rejection
 
 ```
 User: "Will that really work?"
-
 Claude: "You're right, let me try a different approach..."
 ```
 
-**Problem:** Assumed question = rejection.
+Assumed question = rejection. The user never said it wouldn't work.
 
-### CORRECT - Answer Literally
+### CORRECT: answer literally, then ask
 
 ```
 User: "Will that really work?"
-
-Claude: "Honestly, I'm about 70% confident. The main risk is X.
-It would work if Y holds true, but we'd need to test Z to be sure.
-Want me to test it, or explore alternatives?"
+Claude: "Honestly, about 70% confident. The main risk is X. It works
+if Y holds, but we'd need to test Z to be sure. Want me to test it,
+or explore alternatives?"
 ```
 
 ---
 
-### WRONG - Interpret "Considered?" as "Do it"
+### WRONG: interpret "considered?" as "do it"
 
 ```
 User: "Have you considered using Redis instead?"
-
 Claude: "Good point. I'll switch to Redis."
 ```
 
-**Problem:** Assumed mention = directive.
+Assumed mention = directive.
 
-### CORRECT - Answer the Question
+### CORRECT: answer the question
 
 ```
 User: "Have you considered using Redis instead?"
-
-Claude: "I did consider it. Redis would give us faster reads but
-adds operational complexity. The current approach trades some
-speed for simpler deployment.
-
-Do you want me to compare them in more detail, or switch to Redis?"
+Claude: "I did. Redis gives faster reads but adds operational
+complexity. The current approach trades some speed for simpler
+deployment. Want me to compare them in detail, or switch to Redis?"
 ```
 
 ---
 
-### WRONG - Answer Then Act
+### WRONG: answer correctly, then act unasked
 
 ```
 User: "How is ID generation a separate task? Task 58 won't work without IDs."
-
-Claude: "Good catch. You're right—ID generation is fundamental.
-Fix: I'll merge these tasks. [starts updating]"
+Claude: "Good catch. ID generation is fundamental. I'll merge these tasks.
+[starts updating]"
 ```
 
-**Problem:** Acted without asking.
+Right answer, wrong move: acted without asking.
 
-### CORRECT - Answer Then Ask
+### CORRECT: answer, then ask
 
 ```
 User: "How is ID generation a separate task? Task 58 won't work without IDs."
-
-Claude: "You're right—ID generation is fundamental, not separate.
-Without it, you can't add nodes at all.
-
-How would you like me to restructure this?"
+Claude: "You're right — ID generation is fundamental, not separate.
+Without it you can't add nodes at all. How would you like me to
+restructure this?"
 ```
 
 ---
 
-### WRONG - Challenge = Change Direction
+### WRONG: treat a challenge as a change order
 
 ```
 User: "Are you sure the cache needs invalidation here?"
-
 Claude: "You make a good point. I'll remove the cache invalidation."
 ```
 
-**Problem:** Question interpreted as disagreement.
-
-### CORRECT - Explain Your Reasoning
+### CORRECT: explain your reasoning, then offer the choice
 
 ```
 User: "Are you sure the cache needs invalidation here?"
-
-Claude: "The cache holds user preferences. When preferences update,
-stale cache would show old values for up to 5 minutes.
-Invalidation ensures immediate consistency.
-
-If eventual consistency is acceptable, we could skip it. Which do you prefer?"
+Claude: "The cache holds user preferences. On update, stale cache shows
+old values for up to 5 minutes; invalidation keeps it consistent. If
+eventual consistency is fine, we can skip it. Which do you prefer?"
 ```
 
 ## Decision Flowchart
 
 ```
-User sends message with "?"
+User sends a message
          │
          ▼
 ┌─────────────────────────┐
-│ Is this a literal       │
-│ question about facts,   │──YES──▶ Answer honestly
-│ options, or reasoning?  │              │
-└─────────────────────────┘              ▼
-         │                        Ask what they want
-         NO                       to do with the answer
-         │                              │
-         ▼                              ▼
-┌─────────────────────────┐            STOP
-│ Is this an explicit     │
-│ request to take action? │──YES──▶ Take the action
+│ Is this a question about │──YES──▶ Answer honestly
+│ facts, options, or       │             │
+│ reasoning?               │             ▼
+└─────────────────────────┘      Ask what they want to do
+         │                       with the answer → STOP
+         NO
+         ▼
+┌─────────────────────────┐
+│ Is this an explicit      │──YES──▶ Take the action
+│ request to act?          │
 └─────────────────────────┘
          │
          NO
-         │
          ▼
    Ask for clarification
 ```
 
-## Signal Words That Trigger This Skill
+## Common Rationalizations
 
-- "?" in the message
-- "Why did you...?"
-- "Will that work?"
-- "Have you considered...?"
-- "Is this the best...?"
-- "What if...?"
-- "Are you sure...?"
+| Rationalization | Reality |
+|---|---|
+| "They're clearly hinting I should change it" | If they wanted a change they'd ask for one. A question is a request for information; honor it as written. |
+| "Answering and acting is more efficient" | Not when you act on the wrong inference. You do unrequested work and then undo it. |
+| "Saying 'you're right' shows I'm listening" | Reflexive agreement isn't listening; it's capitulation. Answer the question; agreement is for when you actually agree. |
+| "The question implies a problem, so I'll fix it" | The question may be probing whether a problem exists. Describe what you find, then let them decide. |
+| "Asking what they want next is annoying" | Acting on a guessed intent is far more annoying. The user owns the decision; the answer just informs it. |
 
-## Integration
+## Red Flags
 
-| Skill | Relationship |
-|-------|--------------|
-| `critical-peer` | Both require honest, direct responses |
-| `confidence-levels` | Answer questions with honest uncertainty |
-| `research-first` | Investigate before answering |
-
-## Anti-Patterns
-
-| Anti-Pattern | What Happened |
-|--------------|---------------|
-| "You're right, let me..." | Interpreted question as rejection |
-| "Good point, I'll..." | Interpreted mention as directive |
-| Answering then acting | Didn't ask what user wants |
-| Assuming disagreement | Question ≠ challenge |
-| Defensive response | Treated question as criticism |
-
-## Quick Reference
-
-- [ ] Did I answer what they actually asked?
-- [ ] Did I STOP after answering?
-- [ ] Did I ask what they want to do next?
-- [ ] Did I interpret a question as instruction?
-- [ ] Did I answer honestly about confidence/risks?
+- "You're right, let me…" in response to a question (you read rejection where there was none)
+- "Good point, I'll…" after a mention (you read a directive where there was a query)
+- Answering correctly and then editing/building without being asked
+- Treating "are you sure?" as "you're wrong"
+- A defensive reply that argues instead of answering
+- Reversing a sound decision the moment it's questioned
