@@ -43,4 +43,15 @@ jobs:
         # subprocesses for stdio MCP servers in the scanned configs. This repo
         # ships skills only (no MCP servers), so the flag is inert here. Revisit
         # if a skill that bundles an MCP server is ever added.
-        run: uvx --python 3.12 snyk-agent-scan@latest ./skills --ci --dangerously-run-mcp-servers
+        #
+        # --ignore-issues-codes: reviewed and accepted as inherent to these skills,
+        # not defects (real findings like leaked credentials are NOT ignored):
+        #   W011 third-party content exposure — agent-browser and research-first
+        #        exist to ingest web/page content; documented as untrusted in each
+        #        skill's Security note.
+        #   W012 external URL executed at runtime — performance-testing's example
+        #        uses the official, version-pinned k6 jslib CDN.
+        #   W021 hidden Unicode — zero-width joiners / variation selectors inside
+        #        example emoji (e.g. the family emoji in writing-tests' edge-case
+        #        checklist), not obfuscation.
+        run: uvx --python 3.12 snyk-agent-scan@latest ./skills --ci --dangerously-run-mcp-servers --ignore-issues-codes W011,W012,W021
