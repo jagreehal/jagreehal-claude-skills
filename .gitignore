@@ -1,0 +1,3 @@
+# Local Claude Code workspace settings must not be shipped by the repo.
+.claude/settings.json
+.claude/settings.local.json
