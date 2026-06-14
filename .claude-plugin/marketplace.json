@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "TypeScript patterns and skills for production-grade AI-assisted development",
-    "version": "3.3.0"
+    "version": "3.4.0"
   },
   "plugins": [
     {
@@ -100,10 +100,10 @@
     {
       "name": "documentation-architecture",
       "source": "./",
-      "description": "Documentation and system design: standards, architecture decisions, structured writing, data visualization, SPINE framework for articles",
-      "version": "1.6.0",
+      "description": "Documentation and system design: standards, architecture decisions, structured writing, data visualization, SPINE framework for articles, story-led policy explanations",
+      "version": "1.8.0",
       "license": "MIT",
-      "keywords": ["documentation", "architecture", "adr", "design", "visualization", "technical-writing", "articles"],
+      "keywords": ["documentation", "architecture", "adr", "design", "visualization", "technical-writing", "articles", "policy", "compliance"],
       "category": "development",
       "skills": [
         "./skills/documentation-standards",
@@ -111,7 +111,8 @@
         "./skills/structured-writing",
         "./skills/data-visualization",
         "./skills/design-principles",
-        "./skills/spine-framework"
+        "./skills/spine-framework",
+        "./skills/policy-story-explainer"
       ]
     },
     {
