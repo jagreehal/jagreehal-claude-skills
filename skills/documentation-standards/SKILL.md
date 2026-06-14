@@ -1,22 +1,35 @@
 ---
 name: documentation-standards
-description: "User-centered documentation quality framework. Eight quality dimensions, document type requirements, and review checklist. Documentation exists to serve readers, not demonstrate knowledge."
-version: 1.0.0
+description: Frames documentation around reader needs using eight quality dimensions, document-type requirements, and a review checklist. Use when writing or reviewing READMEs, API references, tutorials, changelogs, or error messages, when documenting a public API, or when judging whether docs are good enough to ship.
+version: 1.1.0
 ---
 
 # Documentation Standards
 
-Documentation exists to serve readers, not to demonstrate knowledge.
+## Overview
 
-## Core Principle
+Documentation serves readers, not the author's knowledge. Every documentation decision starts with one question: "What does the reader need?" Code shows *what* was built; documentation explains *why it was built this way*, *how to use it*, and *what to do when it breaks*. The eight quality dimensions below turn that reader-first principle into checkable criteria so you can judge any document against them instead of by feel.
 
-Every documentation decision starts with: "What does the reader need?"
+Master the principles, and templates follow. A document that scores well across all eight dimensions serves its reader regardless of which template it started from.
+
+## When to Use
+
+- Writing a README, API reference, tutorial, or changelog
+- Documenting a public API, library interface, or endpoint
+- Reviewing existing docs for quality before shipping
+- Writing user-facing error messages
+- Deciding whether documentation is complete enough to release
+
+**When NOT to use:** Don't document obvious code or restate what the code already says. Don't write docs for throwaway prototypes. Don't add placeholder docs you can't keep accurate: stale docs are worse than none.
+
+**Related:** [structured-writing](../structured-writing/SKILL.md) for capturing content while preserving voice; [system-architecture](../system-architecture/SKILL.md) for ADRs that record decision rationale; [design-principles](../design-principles/SKILL.md) for domain naming carried into docs; [data-visualization](../data-visualization/SKILL.md) for diagrams and tables that replace walls of text.
+
 
 ## Critical Rules
 
 | Rule | Enforcement |
 |------|-------------|
-| Reader first | Not code-centered - user task-centered |
+| Reader first | User-task-centered, not code-centered |
 | No lies | No broken links, untested examples, outdated info |
 | Test everything | Every code sample runs, every link resolves |
 | Principles over templates | Master principles; templates follow |
@@ -175,7 +188,7 @@ except MFARequiredError:
 
 ## Code Sample Rules
 
-### WRONG - Incomplete
+### WRONG: Incomplete
 
 ```javascript
 client.send(message)
@@ -183,7 +196,7 @@ client.send(message)
 
 **Missing:** imports, initialization, error handling, output
 
-### CORRECT - Complete
+### CORRECT: Complete
 
 ```javascript
 import { Client, Message } from 'mylib';
@@ -254,15 +267,28 @@ Authentication failed
 Authentication failed. Check that your API key is valid at Settings > API Keys.
 ```
 
-## Integration
+## Common Rationalizations
 
-| Skill | Relationship |
-|-------|--------------|
-| `concise-output` | Applies brevity to documentation |
-| `design-principles` | Domain naming in docs |
-| `validation-boundary` | Document schemas at boundaries |
+| Rationalization | Reality |
+|---|---|
+| "The code is self-documenting" | Code shows *what*. It can't show *why*, what alternatives were rejected, or how to recover from errors. |
+| "We'll write docs when the API stabilizes" | The doc is the first test of the design. Writing it stabilizes the API faster. |
+| "Nobody reads docs" | Future engineers do, agents do, and your three-months-later self does. |
+| "See the source code" | If a reader has to read the source, the doc failed. Document it or don't ship it. |
 
-## Review Checklist
+## Red Flags
+
+- "See source code" instead of actual documentation
+- Placeholder examples like `{ /* config */ }` that can't be run
+- Commit logs pasted in as a changelog
+- Undefined jargon assuming readers share your context
+- Only happy paths documented; errors ignored
+- Walls of text with no headings, lists, or whitespace
+- Broken links or examples that no longer compile
+
+## Verification
+
+After writing or reviewing documentation:
 
 ### User-Centered Design
 - [ ] Target user identified
@@ -289,14 +315,3 @@ Authentication failed. Check that your API key is valid at Settings > API Keys.
 - [ ] Examples syntactically correct
 - [ ] Version numbers current
 - [ ] Links resolve
-
-## Anti-Patterns
-
-| Anti-Pattern | Why It's Wrong |
-|--------------|----------------|
-| "See source code" | Document it or don't ship it |
-| `{ /* config */ }` examples | Placeholders can't be run |
-| Commit logs as changelog | Write for humans |
-| Undefined jargon | Readers don't share your context |
-| Only happy paths | Errors happen |
-| Walls of text | Readers scan, not read |

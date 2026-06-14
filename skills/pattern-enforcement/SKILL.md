@@ -1,15 +1,30 @@
 ---
 name: pattern-enforcement
-description: "Enforce architectural patterns with ESLint rules. Block infra imports, enforce object params, prevent server/client leaks."
-version: 1.0.0
+description: Enforces architectural patterns at build time with ESLint so violations fail CI instead of relying on convention. Use when configuring eslint.config.mjs, blocking domain code from importing infra, requiring object parameters, preventing server code from leaking into client bundles, choosing ESLint plugins (boundaries, prefer-object-params, no-server-imports), or constraining AI-generated code.
+version: 1.1.0
 libraries: ["eslint-plugin-boundaries", "eslint-plugin-prefer-object-params", "eslint-plugin-no-server-imports"]
 ---
 
-# Enforcing Patterns with ESLint
+# Pattern Enforcement
 
-## Core Principle
+## Overview
 
-Documentation is a ritual. Rules are enforcement. Patterns without rules that fail the build are just suggestions.
+Documentation is a ritual; rules are enforcement. A pattern that lives only in a README or a CLAUDE.md is a suggestion: the next contributor (human or agent) will skip it the moment it's inconvenient, and nothing stops them. The only patterns that survive are the ones that fail the build.
+
+This skill encodes architectural intent as ESLint rules set to `'error'`: domain code cannot import infrastructure, functions take object parameters instead of positional ones, and server-only code cannot reach client bundles. This matters doubly for AI-generated code. Prompting is probabilistic (the agent might follow the pattern, might not), while a failing lint rule is deterministic (lint fails, the agent fixes it). Constrain agents with the same systems you already trust: linters, types, tests, and CI.
+
+## When to Use
+
+- Setting up or extending `eslint.config.mjs` for a TypeScript project
+- Enforcing layered architecture (domain / infra / api boundaries)
+- Requiring the `fn(args, deps)` object-parameter convention across a codebase
+- Preventing server imports or Node.js modules from reaching client code
+- Constraining AI/agent contributions so deviations fail CI
+- Migrating an existing codebase onto these patterns incrementally
+
+**When NOT to use:** compiler-level type safety (flags, `any`/`as` bans) belongs in [`strict-typescript`](../strict-typescript/SKILL.md); runtime input checks belong in [`validation-boundary`](../validation-boundary/SKILL.md). ESLint enforces *structure*, not *values*.
+
+**Related:** [`strict-typescript`](../strict-typescript/SKILL.md) (compile-time enforcement and `@typescript-eslint`), [`fn-args-deps`](../fn-args-deps/SKILL.md) (the object-param / DI pattern these rules enforce), [`config-management`](../config-management/SKILL.md), [`api-design`](../api-design/SKILL.md).
 
 ## Required ESLint Rules
 
@@ -217,7 +232,7 @@ export default [
 
 ## Migrating Existing Codebases
 
-The `prefer-object-params` rule currently reports violations but doesn't auto-fix them (the transformation is too complex for safe automation—call sites need updating too).
+The `prefer-object-params` rule currently reports violations but doesn't auto-fix them (the transformation is too complex for safe automation, since call sites need updating too).
 
 For large-scale migrations, consider:
 
@@ -248,9 +263,31 @@ Rules are deterministic - lint fails, code fails, agent fixes.
 
 > If AI is writing code in your repo, constrain it with the same systems you already trust: linters, types, tests, and CI checks.
 
-## The Rules
+## Common Rationalizations
 
-1. **Enforce architectural boundaries** - Block domain importing infra
-2. **Enforce function signatures** - Require object parameters
-3. **Enforce server/client separation** - Block Node.js in client code
-4. **Use 'error' not 'warn'** - Violations must fail the build
+| Rationalization | Reality |
+|---|---|
+| "The pattern is documented in CLAUDE.md, that's enough" | Documentation is opt-in. The next agent ignores it without consequence. A failing rule is mandatory. |
+| "I'll set it to `'warn'` so it doesn't block anyone" | Warnings are noise everyone scrolls past. If the pattern matters, it's `'error'`. |
+| "ESLint boundaries are too strict for our app" | Then your layering is unclear, not the rule. Define the elements explicitly and the rule documents the architecture. |
+| "Positional params are fine for two arguments" | Two becomes five. Object params make every call site self-documenting and refactor-safe from day one. |
+| "We can't migrate the whole codebase at once" | Adopt incrementally (`'warn'` then fix file-by-file, or codemod), but keep the rule on so new violations can't land. |
+| "The AI usually follows the pattern" | "Usually" is probabilistic. A lint error makes it deterministic: lint fails, agent fixes. |
+
+## Red Flags
+
+- Architectural patterns that exist only in docs, with no lint rule backing them
+- ESLint rules set to `'warn'` for patterns that are supposed to be mandatory
+- `import` of `../infra/**` from inside `src/domain/**`
+- Functions with three or more positional parameters
+- Server-only modules imported into components/hooks, or `import/no-nodejs-modules` absent from client globs
+- CI that does not run `eslint` (or runs it with `--quiet`, swallowing warnings)
+
+## Verification
+
+- [ ] `eslint.config.mjs` defines `boundaries/elements` and enforces directional `element-types`
+- [ ] `prefer-object-params` is enabled (off only for test files)
+- [ ] Server/client separation is enforced via `no-server-imports` and `import/no-nodejs-modules` on client globs
+- [ ] Every enforcement rule is `'error'`, not `'warn'`
+- [ ] CI fails on any ESLint error
+- [ ] Migration of existing violations has a tracked plan (codemod or incremental fix), with the rule already on for new code

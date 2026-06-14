@@ -1,15 +1,15 @@
 ---
 name: resilience
-description: "Add retry, timeout, and circuit breaker patterns at the workflow level. Business functions stay clean."
-version: 1.0.0
+description: Adds retry, timeout, jitter, and circuit-breaker patterns at the workflow level so business functions stay clean. Use when wrapping flaky operations (HTTP calls, DB reads, external APIs) with retry/backoff, setting per-attempt timeouts, deciding which errors are retryable, protecting against retry storms and double-charges, or composing step.retry/step.withTimeout in a @jagreehal/workflow workflow.
+version: 1.1.0
 libraries: ["@jagreehal/workflow"]
 ---
 
 # Resilience Patterns
 
-## Core Principle
+## Overview
 
-Resilience is a **composition concern**, not a business logic concern. Add retry/timeout at the workflow level, not inside functions.
+Resilience is a **composition concern**, not a business logic concern. Retry, timeout, backoff, and circuit-breaking belong at the workflow level, never inside the functions that do the actual work. This keeps business functions pure and testable (they return a `Result`), confines retry policy to one place so it never multiplies across layers, and makes failure handling explicit and auditable at the call site.
 
 ```
 Workflows
@@ -24,6 +24,18 @@ Infrastructure
   -> pg, redis, http
   -> (just transport)
 ```
+
+## When to Use
+
+- Wrapping operations that can fail transiently: HTTP calls, DB reads, cache lookups, external APIs
+- Setting per-attempt timeouts so nothing hangs indefinitely
+- Deciding which error types are safe to retry
+- Guarding non-idempotent writes (payments, creates) against accidental replay
+- Protecting downstream services from retry storms with jitter and circuit breakers
+
+**When NOT to use:** Inside business functions (keep them clean, see [`fn-args-deps`](../fn-args-deps/SKILL.md)), on non-idempotent writes without an idempotency key, or stacking retry at multiple layers. Pure input validation belongs in [`validation-boundary`](../validation-boundary/SKILL.md), not retry.
+
+**Related:** [`result-types`](../result-types/SKILL.md) (what retried functions return; retry decisions key off the error variant), [`fn-args-deps`](../fn-args-deps/SKILL.md) (clean functions the workflow wraps), [`api-design`](../api-design/SKILL.md) (where `Idempotency-Key` and `Retry-After` originate), [`observability`](../observability/SKILL.md) (tracing retried steps and timeouts).
 
 ## Required Behaviors
 
@@ -264,6 +276,40 @@ if (!result.ok && isStepTimeoutError(result.error)) {
   });
 }
 ```
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "I'll just add a retry loop inside the function" | That couples business logic to failure policy and hides it from the call site. Retry at the workflow level. |
+| "Retrying at every layer is extra safe" | It multiplies: 3 × 3 × 3 = 27 attempts. You DDoS your own infrastructure. Retry at ONE level. |
+| "Retrying the charge is fine, it usually works" | A retried non-idempotent write double-charges. Only retry with an idempotency key. |
+| "We don't need jitter, the delay is randomized enough" | Without jitter every instance retries in lockstep, a thundering herd that prevents recovery. Always enable jitter in production. |
+| "A timeout will rarely trigger, skip it" | Without a timeout a hung dependency hangs your request forever and exhausts connections. Always set one. |
+| "Circuit breakers are for big systems" | Any external dependency that can stay down benefits. Failing fast beats hammering a dead service. |
+
+## Red Flags
+
+- `while (attempts < n)` or try/catch retry loops inside business functions
+- Retry configured at more than one layer for the same call
+- Retrying `NOT_FOUND`, `UNAUTHORIZED`, or `VALIDATION_FAILED` (non-transient)
+- `step.retry()` around a charge/create/write with no idempotency key
+- `jitter` not enabled, or no `backoff` strategy set
+- Any external call with no timeout
+- A multi-step `step.retry()` block where the steps are not all idempotent
+
+## Verification
+
+After adding resilience to an operation:
+
+- [ ] Retry lives at the workflow level, not inside the business function
+- [ ] Exactly one layer retries this call
+- [ ] `retryOn` (or equivalent) only matches transient errors
+- [ ] Non-idempotent writes either are not retried or carry an idempotency key
+- [ ] Every retried/wrapped call has a per-attempt timeout
+- [ ] `jitter: true` and a `backoff` strategy are set for production
+- [ ] Timeout errors are detected and logged (`isStepTimeoutError`)
+- [ ] Tests of the underlying function still pass unchanged (it stayed clean)
 
 ## The Rules
 

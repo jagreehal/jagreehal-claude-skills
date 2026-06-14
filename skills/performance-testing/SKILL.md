@@ -1,15 +1,17 @@
 ---
 name: performance-testing
-description: "Load testing, chaos engineering, and performance validation. Prove your system works under pressure with k6, trace correlation, and progressive load profiles."
-version: 1.0.0
+description: Validates that a system holds up under pressure using progressive k6 load profiles, trace correlation, SLO thresholds, and chaos injection. Use when verifying throughput or latency under load, finding breaking points, proving resilience patterns work, or catching performance regressions in CI.
+version: 1.1.0
 libraries: ["k6"]
 ---
 
 # Performance Testing
 
-## Core Principle
+## Overview
 
-Unit tests verify correctness. Integration tests verify the stack works. **Load tests reveal bottlenecks that only appear under pressure.**
+Unit tests verify correctness and integration tests verify the stack works, but neither reveals bottlenecks that appear only under concurrent traffic. Performance testing applies progressive load (smoke → load → stress → soak → spike), correlates requests with traces, enforces SLOs as pass/fail thresholds, and injects chaos to prove resilience patterns fire.
+
+**Why this matters:** A response that takes 135ms for a single request can take 2550ms under 1000 concurrent users. The bottleneck is invisible until you add load. Connection pool exhaustion, N+1 queries, missing caches, and absent timeouts only surface under pressure. Measuring against explicit thresholds turns "feels fast enough" into a regression gate that fails the build, and correlating load with traces turns a slow percentile into a specific span you can fix.
 
 ```
 Single Request: 135ms ✓
@@ -17,6 +19,18 @@ Under 1000 concurrent: 2550ms ✗
 
 The bottleneck was invisible until you added load.
 ```
+
+## When to Use
+
+- Verifying a service meets latency or throughput SLOs under realistic traffic
+- Finding the breaking point of a system (stress testing)
+- Detecting memory leaks or degradation over time (soak testing)
+- Proving resilience patterns (retries, timeouts, circuit breakers) work under failure
+- Catching performance regressions automatically in CI
+
+**When NOT to use:** Before unit and integration tests pass. A smoke test that fails with 1 user is a functional bug, not a performance problem. For writing correctness tests, see [testing-strategy](../testing-strategy/SKILL.md) and [writing-tests](../writing-tests/SKILL.md).
+
+**Related:** [testing-strategy](../testing-strategy/SKILL.md) places load and chaos tests at the top of the pyramid; [resilience](../resilience/SKILL.md) defines the retry, timeout, and circuit-breaker patterns chaos tests prove; [observability](../observability/SKILL.md) provides the traces this skill correlates load against; [debugging-methodology](../debugging-methodology/SKILL.md) covers diagnosing the bottlenecks load reveals.
 
 ## Required Behaviors
 
@@ -186,7 +200,7 @@ Common bottlenecks revealed by load + traces:
 
 ### 4. Set SLOs and Thresholds
 
-Don't just measure—set expectations. k6 thresholds fail your test if SLOs aren't met:
+Don't measure without setting expectations. k6 thresholds fail your test if SLOs aren't met:
 
 ```javascript
 export const options = {
@@ -213,7 +227,7 @@ export const options = {
 
 ### 5. Chaos Engineering
 
-Prove your [resilience patterns](/skills/resilience) actually work by injecting failures.
+Prove your [resilience patterns](../resilience/SKILL.md) work by injecting failures.
 
 #### Simple Chaos: Latency Injection
 
@@ -413,7 +427,7 @@ Each layer catches different bugs. Each layer requires the one below to pass fir
 
 ### Forgetting sleep() in k6
 
-Without `sleep()`, a single VU generates hundreds of requests per second—accidentally DDoS-ing your local machine. Always include think time:
+Without `sleep()`, a single VU generates hundreds of requests per second, accidentally DDoS-ing your local machine. Always include think time:
 
 ```javascript
 export default function () {
@@ -438,4 +452,34 @@ headers: {
 ### Not Setting Realistic Thresholds
 
 If thresholds are too strict, tests fail on normal variance. If too loose, they miss real problems. Start with your SLOs and adjust based on actual production metrics.
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "It's fast on my machine, no need to load test" | A single request hides pool exhaustion and N+1s that only appear under concurrency. |
+| "I'll jump straight to a stress test" | A failing smoke test is a functional bug. Go smoke → load → stress so you know what actually broke. |
+| "Thresholds are optional, I'll eyeball the numbers" | Without thresholds the test can't fail in CI, so regressions ship silently. Encode SLOs. |
+| "Trace correlation is overkill" | A slow p99 with no traceparent leaves you guessing. Correlation turns a percentile into a fixable span. |
+| "Our resilience code obviously works" | Untested retries and circuit breakers usually don't fire correctly. Inject latency and failures to prove it. |
+| "sleep() just slows the test down" | Without it one VU floods the target and you measure your own DDoS, not real behavior. |
+
+## Red Flags
+
+- A k6 script with no `thresholds` block
+- VUs ramped without any `sleep()` think time
+- Load tests run only locally, never in CI
+- Resilience patterns (retry, timeout, circuit breaker) with no chaos test exercising them
+- Requests sent without a `traceparent` header for correlation
+- Stress testing before smoke and load profiles pass
+
+## Verification
+
+- [ ] Smoke test passes before any higher-load profile runs
+- [ ] Each profile defines SLO-based `thresholds` that fail the run when breached
+- [ ] Every VU iteration includes `sleep()` think time
+- [ ] Requests carry a `traceparent` (and load-test id) for trace correlation
+- [ ] Resilience patterns are exercised by a chaos test (latency and/or failure injection)
+- [ ] Load tests run in CI to catch regressions
+- [ ] Bottlenecks found under load are diagnosed via traces, not guesses
 

@@ -1,12 +1,27 @@
 ---
 name: session-continuity
-description: "Persistent task workflow with state machine. Every message MUST announce state. Uses .claude/ files for multi-session continuity. Never use TodoWrite. Never auto-advance tasks."
-version: 2.0.0
+description: Manages a persistent, multi-session task workflow through a strict state machine backed by files in the project's .claude/ directory. Use when resuming work across sessions, when the user says "continue" or "create a plan"/"setup tasks", or when work must survive a session restart, context compaction, or handoff. Every message announces its state; tasks never auto-advance and TodoWrite is never used.
+version: 2.1.0
 ---
 
 # Session Continuity
 
-Persistent task workflow that survives session restarts.
+## Overview
+
+Persistent task workflow that survives session restarts. Sessions end, context windows compact, and agents hand off, but the work must continue where it left off. This skill externalizes all task state into versioned files in the project's `.claude/` directory and drives execution through a strict state machine. State lives in files, not in the conversation, so any session can pick up the work by reading three files. The state machine prevents the two failure modes that destroy continuity: re-deriving progress by re-investigating the codebase (wasteful, the answer is already in `session.md`), and auto-advancing past tasks the user never approved.
+
+## When to Use
+
+- Resuming work across sessions when the user says "continue"
+- Starting a multi-task plan when the user says "create a plan" or "setup tasks"
+- Work that must survive a session restart, context compaction, or agent handoff
+- Any task list where the user wants explicit control over advancing and committing
+
+**When NOT to use:** A single, self-contained change that completes within one session and needs no persistence. For breaking a spec into tasks before persisting them, see [implementation-planning](../implementation-planning/SKILL.md). For the verification gate this skill enforces in the VERIFY state, see [verification-before-completion](../verification-before-completion/SKILL.md).
+
+**Related:** [implementation-planning](../implementation-planning/SKILL.md), [verification-before-completion](../verification-before-completion/SKILL.md), [tdd-workflow](../tdd-workflow/SKILL.md), [investigation-modes](../investigation-modes/SKILL.md).
+
+For multi-step and multi-agent coordination rules, see [`references/orchestration-patterns.md`](../../references/orchestration-patterns.md).
 
 ## CRITICAL: STATE MACHINE GOVERNANCE
 
@@ -452,3 +467,25 @@ RIGHT: Visible, editable files
 | VERIFY | VERIFY | Run verification | Pass/Fail |
 | COMPLETE | COMPLETE | Update session.md | → CHECK_STATUS |
 | BLOCKED | BLOCKED | Explain, STOP | User guidance |
+
+## Red Flags
+
+- A message with no state prefix
+- Investigating the codebase to figure out progress instead of reading `session.md`
+- Advancing to the next task without explicit user approval
+- Claiming a task complete without running the VERIFY commands
+- Using TodoWrite or any internal todo state instead of `.claude/` files
+- Creating a git commit on the user's behalf
+- Improvising a workaround from the BLOCKED state instead of stopping
+- Reading files outside the current state's allowed actions (each state lists what it may touch)
+
+## Verification
+
+Confirm before relying on this workflow:
+
+- [ ] Every message in the session starts with a state prefix
+- [ ] The three files exist in the project's `.claude/` directory: `tasks.md`, `requirements.md`, `session.md`
+- [ ] `CHECK_STATUS` reads only `session.md` and routes on its Status field
+- [ ] `VERIFY` runs every command from the requirements Verification section and shows output verbatim
+- [ ] No task moved to `[x]` without the user saying yes in `AWAITING_COMMIT`
+- [ ] No TodoWrite call was made and no git commit was created by the agent

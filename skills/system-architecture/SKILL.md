@@ -1,22 +1,35 @@
 ---
 name: system-architecture
-description: "Design systems for change. Trade-off analysis, ADR documentation, pattern selection. Architecture decisions must have documented rationale."
-version: 1.0.0
+description: Designs systems for change through explicit trade-off analysis, pattern selection by context, and ADR-documented rationale. Use when choosing an architecture (monolith vs microservices), selecting a database, planning for scale or resilience, designing APIs or event flows, or recording a significant technical decision.
+version: 1.1.0
 ---
 
 # System Architecture
 
-Design systems for change. Every architecture decision answers: "How will this scale and evolve?"
+## Overview
 
-## Core Principle
+Design systems for change. Every architecture decision answers one question: "How will this scale and evolve?" There are no best practices, only trade-offs in context. The best architecture is the simplest one that meets current needs while enabling future growth.
 
-There are no best practices—only trade-offs in context. The best architecture is the simplest one that meets current needs while enabling future growth.
+Because there is no universal "right" answer, the work is making trade-offs *explicit* and recording *why* you chose one option over the alternatives. An undocumented decision becomes a mysterious legacy constraint; a decision captured in an ADR lets future engineers and agents understand the reasoning instead of re-litigating it. This skill gives you the frameworks (trade-off tables, pattern guides, ADR format) to do both.
+
+## When to Use
+
+- Choosing an overall architecture (monolith, modular monolith, microservices, serverless)
+- Selecting a database or data store
+- Planning for scale, caching, or resilience
+- Designing REST or event-driven APIs
+- Reasoning about consistency in distributed systems
+- Recording any decision that is expensive to reverse
+
+**When NOT to use:** Don't design for problems you don't have; premature abstraction is its own failure mode. Don't write an ADR for trivial or easily reversible choices. Don't pick a pattern because a famous company uses it.
+
+**Related:** [documentation-standards](../documentation-standards/SKILL.md) for writing the ADRs and docs that capture these decisions; [design-principles](../design-principles/SKILL.md) for the domain modeling that informs good boundaries; [api-design](../api-design/SKILL.md) for endpoint-level contract design; [data-visualization](../data-visualization/SKILL.md) for diagramming system structure.
 
 ## Critical Rules
 
 | Rule | Enforcement |
 |------|-------------|
-| Trade-offs over absolutes | No "best" - only "best for this context" |
+| Trade-offs over absolutes | No "best", only "best for this context" |
 | Simplicity that scales | Earn complexity, don't assume it |
 | Decisions with rationale | ADRs for significant choices |
 | Boundaries and contracts | Enable teams to move independently |
@@ -54,7 +67,7 @@ When evaluating architecture, always:
 | Microservices | Large org, independent team deployment, clear bounded contexts | Team autonomy, operational complexity |
 | Serverless | Event-driven, variable load, minimal ops desire | Scaling built-in, cold start latency |
 
-### WRONG - Follow the Trend
+### WRONG: Follow the Trend
 
 ```
 "We should use microservices because that's what Netflix does."
@@ -62,7 +75,7 @@ When evaluating architecture, always:
 
 **Problem:** Following trends without understanding context.
 
-### CORRECT - Context-Driven Decision
+### CORRECT: Context-Driven Decision
 
 ```
 Given:
@@ -163,6 +176,15 @@ problematic for order processing.
 additional infrastructure. Cost unpredictable with access patterns.
 ```
 
+### ADR Lifecycle
+
+```
+PROPOSED → ACCEPTED → (SUPERSEDED or DEPRECATED)
+```
+
+- **Don't delete old ADRs.** They capture historical context.
+- When a decision changes, write a new ADR that references and supersedes the old one.
+
 ## Database Selection
 
 | Type | Use When | Trade-offs |
@@ -230,26 +252,25 @@ In practice: During network partition, choose consistency OR availability.
 | Eventual | All reads eventually see latest | Social feeds, caches |
 | Causal | Cause-effect ordering preserved | Collaborative editing |
 
-## Integration
+## Common Rationalizations
 
-| Skill | Relationship |
-|-------|--------------|
-| `design-principles` | Apply to architecture decisions |
-| `pattern-enforcement` | Enforce boundaries with tooling |
-| `documentation-standards` | Document architectural decisions |
+| Rationalization | Reality |
+|---|---|
+| "Netflix does it this way" | Their context isn't yours. Decide from your team, scale, and constraints. |
+| "We'll need microservices eventually" | Earn that complexity when boundaries are clear, not before. A modular monolith defers the choice cheaply. |
+| "Let's optimize this now" | Optimize with data, not speculation. Premature optimization is wasted complexity. |
+| "We'll document the decision later" | "Later" never comes, and the reasoning evaporates. A 10-minute ADR prevents a 2-hour debate six months on. |
 
-## Anti-Patterns
+## Red Flags
 
-| Anti-Pattern | Why It's Wrong |
-|--------------|----------------|
-| Architecture astronauting | Designing for problems you don't have |
-| Premature optimization | Optimize without data |
-| Trend following | "Netflix does it" isn't a reason |
-| Undocumented decisions | Become mysterious legacy constraints |
-| Over-engineering | Complexity without justification |
-| Ignoring team capabilities | Architecture must match team |
+- Architecture astronauting: designing for problems you don't have
+- Premature optimization without measurement
+- Trend following: "a big company does it" as the only justification
+- Undocumented decisions that become mysterious legacy constraints
+- Over-engineering: complexity with no justification
+- Architecture that ignores actual team capabilities
 
-## Decision Checklist
+## Verification
 
 When making architecture decisions:
 

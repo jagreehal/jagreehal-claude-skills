@@ -1,22 +1,35 @@
 ---
 name: confidence-levels
-description: "Force honest confidence assessment. Express confidence as percentage, explain gaps, validate assumptions before presenting conclusions."
-version: 1.0.0
+description: Forces honest, calibrated confidence assessment instead of vague certainty. Expresses confidence as a percentage, shows the evidence behind it, explains every gap below 100%, and gathers more evidence before concluding when possible. Use when about to state a root cause, diagnosis, or conclusion ("the problem is", "definitely", "clearly the issue", "complete clarity"), when an answer would mislead if it looked more certain than it is, or any time you're presenting an investigation result the user will act on.
+version: 1.1.0
 ---
 
 # Confidence Levels
 
+## Overview
+
 Express confidence as a percentage, not vague certainty.
 
-## Core Principle
+A thorough analysis that *looks* certain but isn't can mislead users into wrong decisions. The danger is conflating explanation quality with evidence quality: a detailed, well-written report feels authoritative even when it rests on unverified assumptions. Thoroughness of presentation is not correctness. A percentage forces you to separate what you've proven from what you've guessed, and showing the math lets the user see where the uncertainty lives.
 
-A thorough analysis that *looks* certain but isn't can mislead users into wrong decisions. Conflating explanation quality with evidence quality causes harm.
+## When to Use
+
+Apply this skill when:
+
+- About to state a root cause, diagnosis, or conclusion the user will act on
+- Presenting investigation or debugging results
+- About to use conclusive language ("definitely", "certainly", "obviously", "the problem is", "complete clarity")
+- Making a non-obvious claim that the type system or a test cannot verify
+
+**When NOT to use:** mechanical facts you can confirm directly (a file exists, a test passes), or when the user explicitly wants a fast guess and has signalled they'll verify it themselves. Don't theatre-wrap a trivially checkable fact in a percentage.
+
+**Related:** `research-first` is the upstream half: gather evidence before concluding, and this skill scores what that evidence supports. `critical-peer` challenges conclusions that lack evidence. `concise-output` keeps the confidence block tight, not padded with hedging prose.
 
 ## Critical Rules
 
 | Rule | Enforcement |
 |------|-------------|
-| Express confidence as % | Not "probably" - use "70% confident" |
+| Express confidence as % | Not "probably". Use "70% confident" |
 | Explain gaps below 95% | Mandatory "Why not 100%?" |
 | Validate before presenting | If you can gather evidence, do it |
 | Show your math | Evidence adds confidence, gaps subtract |
@@ -25,11 +38,11 @@ A thorough analysis that *looks* certain but isn't can mislead users into wrong 
 
 | Range | Icon | Meaning |
 |-------|------|---------|
-| 0-30% | 🔴 | Speculation - needs significant validation |
-| 31-60% | 🟡 | Plausible - evidence exists but gaps remain |
-| 61-85% | 🟠 | Likely - strong evidence, minor gaps |
-| 86-94% | 🟢 | High confidence - validated, minor uncertainty |
-| 95-100% | 💯 | Confirmed - fully validated |
+| 0-30% | 🔴 | Speculation, needs significant validation |
+| 31-60% | 🟡 | Plausible, evidence exists but gaps remain |
+| 61-85% | 🟠 | Likely, strong evidence, minor gaps |
+| 86-94% | 🟢 | High confidence, validated, minor uncertainty |
+| 95-100% | 💯 | Confirmed, fully validated |
 
 ## Calibration Guide
 
@@ -46,27 +59,14 @@ A thorough analysis that *looks* certain but isn't can mislead users into wrong 
 
 Before claiming ANY conclusion, complete this:
 
-### 1. Evidence Inventory
-- What hard evidence supports this?
-- Direct evidence (code/logs that prove it)?
-- What's the strongest piece of evidence?
-
-### 2. Falsifiability Check
-- What would INVALIDATE this theory?
-- Have I looked for that data?
-- If no: WHY NOT?
-
-### 3. Assumption Audit
-- What am I assuming WITHOUT verification?
-- Mark each: [VERIFIED] or [ASSUMED]
-
-### 4. Alternative Possibilities
-- What else could explain these symptoms?
-- Why is my conclusion more likely?
+1. **Evidence Inventory:** What hard evidence supports this? Is it direct (code/logs that prove it)? What's the strongest piece?
+2. **Falsifiability Check:** What would INVALIDATE this theory? Have I looked for that data? If no: why not?
+3. **Assumption Audit:** What am I assuming WITHOUT verification? Mark each `[VERIFIED]` or `[ASSUMED]`.
+4. **Alternative Possibilities:** What else could explain these symptoms? Why is my conclusion more likely?
 
 ## Confidence Scoring
 
-**Start at 50% (neutral) and adjust:**
+Start at 50% (neutral) and adjust:
 
 | Factor | Adjustment |
 |--------|------------|
@@ -96,7 +96,7 @@ To increase confidence: [What's needed]
 
 ## Examples
 
-### WRONG - Premature Certainty
+### WRONG: Premature Certainty
 
 ```
 Claude: "I have complete clarity on the root cause. The issue
@@ -112,7 +112,7 @@ Claude: "This changes everything..."
 
 **Problem:** Claimed certainty with unverified assumptions.
 
-### CORRECT - Honest Assessment
+### CORRECT: Honest Assessment
 
 ```
 🟡 40% Confidence: Database connection pool may be exhausted
@@ -130,7 +130,7 @@ To increase confidence: I need the connection pool metrics
 from the time of failure. Can you provide those?
 ```
 
-### WRONG - Confidence in Explanation Quality
+### WRONG: Confidence in Explanation Quality
 
 ```
 Claude: "Based on my thorough analysis of the code flow,
@@ -139,7 +139,7 @@ I'm certain the bug is in the authentication middleware."
 
 **Problem:** Thoroughness of presentation ≠ correctness. Detailed reasoning without verified evidence is speculation.
 
-### CORRECT - Evidence-Based Confidence
+### CORRECT: Evidence-Based Confidence
 
 ```
 🟠 75% Confidence: Bug is in authentication middleware
@@ -159,7 +159,7 @@ and trace the full middleware chain.
 
 ## Self-Validation Rule
 
-Before returning to user with questions you can answer yourself:
+Before returning to the user with questions you can answer yourself:
 
 ```
 Can I gather more evidence myself?
@@ -169,36 +169,38 @@ Can I gather more evidence myself?
 └─ Run a test to verify?
 
 If YES → DO IT. Then reassess confidence.
-If NO → Present with honest confidence + what you need.
+If NO  → Present with honest confidence + what you need.
 ```
 
-**Critical:** If confidence is below 80% and you CAN gather more evidence → DO IT.
+If confidence is below 80% and you CAN gather more evidence, gather it first. This is the bridge to `research-first`.
 
 ## Trigger Words
 
 Auto-invoke this skill when about to claim:
+
 - "root cause is", "the problem is"
 - "complete clarity", "definitely", "certainly"
 - "clearly the issue", "obviously"
 - Any conclusive claim during investigation
 
-## Integration
+## Common Rationalizations
 
-| Skill | Relationship |
-|-------|--------------|
-| `critical-peer` | Challenge conclusions lacking evidence |
-| `research-first` | Gather evidence before concluding |
-| `debugging-methodology` | Evidence-based investigation |
+| Rationalization | Reality |
+|---|---|
+| "My analysis is thorough, so I'm confident" | Thoroughness of explanation is not evidence quality. A detailed report on an unverified assumption is still speculation. |
+| "A percentage looks unprofessional" | A false certainty that gets contradicted looks far worse. The percentage is what lets the user calibrate trust. |
+| "I'm 90% sure, close enough to just assert it" | Then state 90% and the 10% gap. The gap is the information the user needs to decide whether to verify. |
+| "Adding the gap analysis is too verbose" | The gap is the most actionable part. It tells the user what evidence would settle it. Keep it concise, don't drop it. |
+| "I can't measure confidence numerically" | You don't need precision. The act of subtracting for each unverified assumption is the discipline, not the exact number. |
 
-## Anti-Patterns
+## Red Flags
 
-| Anti-Pattern | Violation |
-|--------------|-----------|
-| "Complete clarity" | Claimed certainty without validation |
-| "Definitely the issue" | Unqualified conclusion |
-| Building detailed reports | Thoroughness ≠ correctness |
-| "It's probably X" | Missing confidence % and gaps |
-| Skipping falsifiability | Haven't asked "what would prove me wrong?" |
+- "Complete clarity" / "definitely" / "obviously" with no evidence list
+- Presenting a long report whose confidence rests on `[ASSUMED]` items
+- No "Why not 100%?" section on a non-trivial conclusion
+- Skipping the falsifiability check ("what would prove me wrong?")
+- Returning to the user with a question you could answer by reading a file or running a test
+- "It's probably X": vague certainty with no percentage and no gap
 
 ## Quick Reference
 

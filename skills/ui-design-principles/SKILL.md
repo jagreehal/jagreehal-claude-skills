@@ -1,12 +1,26 @@
 ---
 name: ui-design-principles
-description: "Design system principles for distinctive, implementation-ready interfaces. Context before design, show don't tell, every state documented."
-version: 1.0.0
+description: Designs distinctive, implementation-ready interfaces grounded in product context, diverse visual exploration, and fully documented component states. Use when establishing design direction, defining a design system or design tokens, specifying component states (hover, focus, error, empty, loading), choosing a visual direction, or reviewing a UI for generic AI-aesthetic and accessibility problems. Triggers include "design a UI", "create a design system", "what should this screen look like", "document the states", "make it look less generic", or "pick a visual direction".
+version: 1.1.0
 ---
 
 # UI Design Principles
 
-Create distinctive, implementation-ready interfaces.
+## Overview
+
+Create distinctive, implementation-ready interfaces. Generic Bootstrap-looking or AI-generated interfaces (purple gradients, rounded-everything, stock card grids) fail to communicate brand or product differentiation, and under-specified designs block developers with unanswered questions. This skill enforces three habits that fix both: gather product context before designing, explore diverse visual directions, and document every state so implementation needs no guesswork.
+
+## When to Use
+
+- Establishing the visual direction for a product or feature
+- Defining a design system, design tokens, or component library
+- Specifying the full state set for a component (default, hover, focus, active, disabled, loading, error, empty)
+- Reviewing an existing UI for generic AI-aesthetic or accessibility problems
+- Deciding between competing visual approaches
+
+**When NOT to use:** Implementing already-specified UI in code (use `react-development`), or verifying rendered output in a browser (use `agent-browser`). This skill defines the design; those skills build and check it.
+
+**Related:** feeds `react-development` (which implements these specs), `storybook-journeys` (which documents the states visually), and `agent-browser` (which verifies the states render correctly).
 
 ## Core Principle
 
@@ -67,7 +81,7 @@ Explore opposite ends of design spectrums:
 | Spacing | Tight/Dense | Spacious/Airy |
 | Mode | Light | Dark |
 
-### WRONG - Not Diverse
+### WRONG: Not Diverse
 
 ```
 Direction A: Blue accent, rounded corners, light mode
@@ -77,7 +91,7 @@ Direction C: Purple accent, rounded corners, light mode
 
 **Problem:** Only varying color.
 
-### CORRECT - Completely Diverse
+### CORRECT: Completely Diverse
 
 ```
 Direction A: Futuristic
@@ -114,7 +128,7 @@ Direction C: Technical/Terminal
 | Error | Validation failures |
 | Empty | No data state |
 
-### WRONG - Missing States
+### WRONG: Missing States
 
 ```
 Button design shows only default appearance
@@ -122,7 +136,7 @@ Form shows only filled state
 List shows only populated state
 ```
 
-### CORRECT - Complete Specification
+### CORRECT: Complete Specification
 
 ```
 Button states:
@@ -198,14 +212,14 @@ Form field states:
 | Keyboard navigation | All interactions keyboard accessible |
 | Color independence | Never rely on color alone |
 
-### WRONG - Color Only
+### WRONG: Color Only
 
 ```
 Error state: Red border only
 Success state: Green checkmark only
 ```
 
-### CORRECT - Multiple Indicators
+### CORRECT: Multiple Indicators
 
 ```
 Error state: Red border + error icon + error message text
@@ -228,6 +242,9 @@ For every component, define:
 
 | Skill | Relationship |
 |-------|--------------|
+| `react-development` | Implements the documented states and tokens in code |
+| `storybook-journeys` | Documents each state visually as a story |
+| `agent-browser` | Verifies documented states render correctly in the browser |
 | `design-principles` | Apply software design to UI patterns |
 | `documentation-standards` | Document design decisions |
 | `data-visualization` | Chart and graph design |

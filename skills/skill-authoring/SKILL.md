@@ -1,18 +1,34 @@
 ---
 name: skill-authoring
-description: "Use when creating, editing, or reviewing skills. Covers discovery optimization, structure patterns, testing approaches, and format decisions."
-version: 1.0.0
+description: Guides authoring of skills that Claude can discover and apply, covering description optimization, structure patterns by skill type, progressive disclosure, testing, and frontmatter rules. Use when creating, editing, or reviewing a SKILL.md, deciding how to structure a skill, or fixing a skill that isn't being discovered or followed.
+version: 1.1.0
 ---
 
 # Skill Authoring Guide
 
-How to write skills that Claude can discover, understand, and apply effectively.
+## Overview
+
+How to write skills that Claude can discover, understand, and apply effectively. A skill earns its place only if its description gets it loaded at the right moment and its body changes behavior once loaded. Everything here serves those two goals: discovery and application.
+
+**Why this matters:** A skill Claude never loads is wasted; a skill Claude loads but ignores under pressure is worse: it creates false confidence. Context is a shared resource, so every token must justify itself. This guide eats its own dog food: its description is third-person and trigger-first, its body follows the structure conventions it teaches.
+
+## When to Use
+
+- Creating a new skill from scratch
+- Editing or restructuring an existing SKILL.md
+- Reviewing a skill before publishing
+- A skill isn't being discovered (description problem) or isn't being followed (body problem)
+- Deciding whether content belongs inline or in a referenced file
+
+**When NOT to use:** Writing application code, prose documentation, or commit messages. Those have their own conventions.
+
+**Related:** This skill applies to authoring all other skills in this collection. It pairs with [documentation-standards](../documentation-standards/SKILL.md) for writing style, [design-principles](../design-principles/SKILL.md) for structure decisions, and [testing-strategy](../testing-strategy/SKILL.md) for evaluation approaches. Discipline skills authored here should follow the Iron Law / red-flags shape used by [debugging-methodology](../debugging-methodology/SKILL.md) and [verification-before-completion](../verification-before-completion/SKILL.md).
 
 ## Core Principles
 
 ### 1. Context is a Shared Resource
 
-- MUST: Challenge every token—"Does Claude need this?"
+- MUST: Challenge every token: "Does Claude need this?"
 - MUST: Keep SKILL.md body under 500 lines
 - NEVER: Explain what Claude already knows (PDFs, libraries, common patterns)
 - SHOULD: Move heavy reference (100+ lines) to separate files
@@ -23,7 +39,8 @@ How to write skills that Claude can discover, understand, and apply effectively.
 - MUST: Include both WHAT it does and WHEN to use it
 - MUST: Include specific triggers/symptoms/contexts
 - NEVER: Summarize the workflow in description (Claude may follow description instead of reading skill)
-- SHOULD: Start with action verb or "Use when..."
+- SHOULD: Start with a third-person action verb ("Debugs…", "Traces…", "Guides…")
+- SHOULD: One sentence on WHAT it does, then concrete "Use when …" triggers
 
 ```yaml
 # WRONG: Summarizes workflow - Claude may skip reading the skill
@@ -32,11 +49,14 @@ description: Code review with two passes - first for spec compliance, then for q
 # WRONG: Too vague
 description: Helps with testing
 
-# CORRECT: Triggers only, no workflow
-description: Use when executing implementation plans with independent tasks
+# WRONG: First person / no triggers
+description: I extract text from PDFs
 
-# CORRECT: Specific with triggers
-description: Extract text and tables from PDF files. Use when working with PDFs, forms, or document extraction.
+# CORRECT: Verb-first WHAT, then specific triggers
+description: Extracts text and tables from PDF files and fills forms. Use when working with PDFs, forms, or document extraction.
+
+# CORRECT: Discipline skill - verb-first, trigger-rich
+description: Debugs failures by gathering evidence before proposing fixes. Use when a test fails, a build breaks, or behavior is unexpected - before changing code.
 ```
 
 ### 3. Match Freedom to Fragility
@@ -77,10 +97,12 @@ Best format: **Pattern + Examples + Common mistakes**
 
 ```markdown
 ## Overview
-[Core principle in 1-2 sentences]
+[Core principle in 1-2 sentences + WHY it matters]
 
 ## When to Use
 [Symptoms and triggers]
+**When NOT to use:** [counter-cases]
+**Related:** [relative links to sibling skills]
 
 ## Core Pattern
 [Before/after comparison]
@@ -90,9 +112,12 @@ Best format: **Pattern + Examples + Common mistakes**
 
 ## Common Mistakes
 [What goes wrong + fixes]
+
+## Verification
+[Checklist proving the technique was applied]
 ```
 
-Example: `condition-based-waiting`, `root-cause-tracing`
+Example: `code-flow-analysis`, `result-types`
 
 ### Discipline Skills (rules/requirements)
 
@@ -108,11 +133,14 @@ Best format: **Iron Law + Phases + Rationalization prevention**
 ## Red Flags - STOP
 [Signs you're about to violate]
 
-## Rationalization Prevention
+## Common Rationalizations
 [Table: Excuse | Reality]
+
+## Verification
+[Checklist proving the discipline was followed]
 ```
 
-Example: `systematic-debugging`, `verification-before-completion`, `tdd-workflow`
+Example: `debugging-methodology`, `verification-before-completion`, `tdd-workflow`
 
 ### Pattern Skills (mental models)
 
@@ -295,10 +323,10 @@ SKILL.md → reference.md (complete info)
 
 ### For Discipline Skills: Pressure Testing
 
-1. Run scenario WITHOUT skill—document baseline behavior
+1. Run scenario WITHOUT skill, document baseline behavior
 2. Note rationalizations Claude uses
 3. Write skill addressing those specific violations
-4. Run scenario WITH skill—verify compliance
+4. Run scenario WITH skill, verify compliance
 5. Find new rationalizations → add counters → re-test
 
 ### Evaluation Structure
@@ -341,7 +369,6 @@ version: 1.0.0
 ### Optional Fields
 
 ```yaml
-libraries: ["react", "zod"]  # If skill requires specific libraries
 ```
 
 ---
@@ -442,10 +469,16 @@ Output: `fix(reports): correct timezone in date formatting`
 - [ ] No time-sensitive information
 - [ ] Keywords for search (errors, symptoms, tools)
 
+**Structure conventions:**
+- [ ] `## Overview` folds in the core principle and states WHY
+- [ ] `## When to Use` includes a `**When NOT to use:**` line
+- [ ] `**Related:**` cross-refs siblings via one-level-deep relative links
+- [ ] `## Verification` checklist present
+
 **Format matches type:**
 - [ ] Reference: commands + best practices
 - [ ] Technique: pattern + examples + mistakes
-- [ ] Discipline: iron law + red flags + rationalization table
+- [ ] Discipline: Iron Law + red flags + rationalization table
 
 **Testing:**
 - [ ] 3+ evaluation scenarios
@@ -454,10 +487,23 @@ Output: `fix(reports): correct timezone in date formatting`
 
 ---
 
+## Verification
+
+Before publishing a skill, confirm:
+
+- [ ] Description is third-person, verb-first, under 1024 chars, with concrete triggers and no workflow summary
+- [ ] Body opens with `## Overview` (what + why) and `## When to Use` (+ when NOT)
+- [ ] `**Related:**` links resolve and are one level deep
+- [ ] Format matches the skill type (reference / technique / discipline / pattern)
+- [ ] Under 500 lines or split via progressive disclosure
+- [ ] No time-sensitive info; terminology is consistent throughout
+- [ ] Tested with target model(s); discipline skills pressure-tested
+
 ## Integration
 
 | Skill | Relationship |
 |-------|--------------|
-| `testing-strategy` | Testing approaches |
-| `documentation-standards` | Writing style |
-| `design-principles` | Structure decisions |
+| [testing-strategy](../testing-strategy/SKILL.md) | Evaluation and pressure-testing approaches |
+| [documentation-standards](../documentation-standards/SKILL.md) | Writing style and formatting |
+| [design-principles](../design-principles/SKILL.md) | Structure and abstraction decisions |
+| All skills in this collection | This guide governs how each is authored |

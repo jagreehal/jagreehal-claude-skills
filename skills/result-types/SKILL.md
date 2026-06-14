@@ -1,11 +1,33 @@
 ---
 name: result-types
-description: "Never throw for expected failures. Use Result<T, E> types with explicit error handling and workflow composition."
-version: 1.0.0
+description: Models expected failures as values with Result<T, E> instead of throwing, and composes them with railway-oriented workflows. Use when a function can fail in expected ways (not found, validation, conflict, timeout), when designing error types, when chaining fallible operations, when mapping errors to HTTP status codes, or when deciding whether to throw or return a Result.
+version: 1.1.0
 libraries: ["@jagreehal/workflow"]
 ---
 
 # Typed Errors: Never Throw
+
+## Overview
+
+Exceptions are invisible (they don't appear in a function's signature, so callers can't see them coming), they bypass composition (a `throw` unwinds the stack past every intermediate step), and they conflate unrelated failures (a `catch` block can't tell a 404 from a database outage). For **expected** failures (not found, validation, conflict, timeout) return a `Result<T, E>` value instead, so the failure is visible in the type, exhaustively handled by the compiler, and composable.
+
+`throw` is reserved for the exceptional: programmer error, invariant violation, corrupted state. Everything a caller might reasonably want to handle is a Result.
+
+This is the third leg of the architecture: [`fn-args-deps`](../fn-args-deps/SKILL.md) functions return Results, [`validation-boundary`](../validation-boundary/SKILL.md) produces the `VALIDATION_FAILED` variant, and [`resilience`](../resilience/SKILL.md) wraps Result-returning steps with retries and timeouts.
+
+## When to Use
+
+- Any function with an expected failure mode (not found, unauthorized, conflict, validation)
+- Chaining several fallible operations where one failure should short-circuit the rest
+- Designing an error type for a module or domain
+- Mapping internal failures to HTTP status codes at the boundary
+- Bridging throwing third-party code into a typed pipeline
+
+**When NOT to use:** Don't return a Result for programmer errors or impossible states. Use `throw` (or `asserts`) for those, since no caller can sensibly recover. See [When Throwing Is Still Right](#when-throwing-is-still-right).
+
+**Related:** [`fn-args-deps`](../fn-args-deps/SKILL.md) (the functions that return Results), [`validation-boundary`](../validation-boundary/SKILL.md) (source of validation errors), [`resilience`](../resilience/SKILL.md) (retry/timeout around Result steps), [`api-design`](../api-design/SKILL.md) (the error-envelope shape), [`observability`](../observability/SKILL.md) (logging failures without throwing).
+
+For how this layer fits the whole system, see [`references/architecture.md`](../../references/architecture.md).
 
 ## Core Principle
 
@@ -311,3 +333,36 @@ Core Functions
 Infrastructure
   -> catch exceptions, return Results
 ```
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "Throwing is less boilerplate than wrapping everything in Result" | The boilerplate is the point: it makes failure visible in the signature and forces the caller to handle it. `createWorkflow` removes most of the ceremony anyway. |
+| "I'll just throw and catch it at the top" | A top-level catch can't distinguish a 404 from a DB outage and can't recover mid-pipeline. The error union does both at compile time. |
+| "Not found isn't really an error, I'll return null" | `null` collapses every failure into one indistinguishable case and silently propagates. Return `err('NOT_FOUND')` so the reason survives. |
+| "The error type union is getting huge" | That's a signal to group errors by domain or use discriminated unions (see [Error Grouping at Scale](#error-grouping-at-scale)). It's still better than untyped throws. |
+| "This third-party function throws, so I have to use try/catch everywhere" | Bridge it once with `step.try()` (mapping the throw to a typed error); the rest of the pipeline stays on the Result rail. |
+| "I'll throw for the validation failure too" | Validation and other expected failures are Results. Reserve `throw` for invariant violations and corrupted state. |
+
+## Red Flags
+
+- A function whose signature says `Promise<User>` but throws on the not-found path
+- `try/catch` blocks scattered through business logic instead of at infrastructure edges
+- Returning `null`/`undefined` to signal distinct failures the caller needs to tell apart
+- A single `catch (e)` swallowing several unrelated failure modes
+- `throw new Error('not found')` for a recoverable, caller-handleable condition
+- Result errors mapped to HTTP status codes in multiple handlers instead of one shared mapper
+- Error unions that grow unbounded with no grouping by domain
+
+## Verification
+
+After implementing fallible logic:
+
+- [ ] Functions with expected failures return `Result<T, E>`, not `Promise<T>` that throws
+- [ ] The error type `E` enumerates every expected failure (no `string`/`any`)
+- [ ] Chained operations compose via `createWorkflow` / `step`, short-circuiting on `err`
+- [ ] Throwing third-party calls are bridged with `step.try()` and mapped to typed errors
+- [ ] Results map to HTTP status in one place at the boundary
+- [ ] `switch` on `result.error` is exhaustive (compiler errors on a missing case)
+- [ ] `throw` / `asserts` is used only for invariant violations and impossible states

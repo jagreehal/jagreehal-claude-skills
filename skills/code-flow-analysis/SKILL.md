@@ -1,18 +1,18 @@
 ---
 name: code-flow-analysis
-description: "Trace code execution path before implementing fixes. Forces understanding of fn(args, deps) flows, Result types, and workflow composition. Prevents guessing by requiring file:line references and execution diagrams."
-version: 1.0.0
+description: Traces a code execution path with file:line references and an execution diagram before any change is made, forcing real understanding of fn(args, deps) flows, Result propagation, and workflow composition. Use before fixing a bug, implementing a feature, refactoring, or starting a TDD cycle, whenever you are about to change non-trivial code.
+version: 1.1.0
 ---
 
 # Code Flow Analysis Protocol
 
-Trace execution paths before implementing. Understand the flow, then fix.
+## Overview
 
-## Core Principle
+Trace execution paths before implementing. Understand the flow, then fix. When fixing bugs, implementing features, or refactoring, first map how the code currently flows through your `fn(args, deps)` functions, Result types, and workflows, using concrete `file:line` references, not abstractions like "the handler."
 
-**Map the execution path before changing code.** When fixing bugs, implementing features, or refactoring, you must first understand how the code currently flows through your `fn(args, deps)` functions, Result types, and workflows.
+**Why this matters:** Understanding the flow makes the solution obvious; guessing wastes time. A five-line diagram of the real path exposes where to add code, where errors propagate, and which assumptions are wrong before you touch anything.
 
-## When This Activates
+## When to Use
 
 Before:
 - Fixing bugs
@@ -21,7 +21,9 @@ Before:
 - Starting TDD cycles
 - Debugging issues
 
-**Skip for:** Typos, formatting, documentation-only changes.
+**When NOT to use:** Typos, formatting, documentation-only changes. These don't need a trace.
+
+**Related:** Run this BEFORE [debugging-methodology](../debugging-methodology/SKILL.md) adds instrumentation; the trace tells you where to probe. Feeds the RED phase of [tdd-workflow](../tdd-workflow/SKILL.md). Always show [result-types](../result-types/SKILL.md) propagation and [fn-args-deps](../fn-args-deps/SKILL.md) signatures in diagrams. Identify where retry/timeout belongs per [resilience](../resilience/SKILL.md), validation per [validation-boundary](../validation-boundary/SKILL.md), and state certainty with [confidence-levels](../confidence-levels/SKILL.md).
 
 ## The Protocol (3 Quick Steps)
 
@@ -196,12 +198,14 @@ workflow(async (step) => {
 ❌ **"I'll add retry logic"** (didn't check if retry exists at workflow level)
 ✅ **"Tracing the flow... [diagram]. Retry should be at workflow level per resilience patterns, not inside the function. Correct?"**
 
-## Integration with Other Skills
+## Common Rationalizations
 
-- **debugging-methodology:** Use this protocol BEFORE adding instrumentation
-- **tdd-workflow:** Use this to understand what to test in RED phase
-- **result-types:** Always show Result propagation in diagrams
-- **resilience:** Identify where retry/timeout should be added (workflow level)
+| Excuse | Reality |
+|--------|---------|
+| "I already know how this flows" | Then writing the 5-line diagram costs nothing and confirms it |
+| "Tracing slows me down" | Guessing wrong and re-fixing is slower; one wrong fix erases the savings |
+| "It's just a small change" | Small changes in the wrong place still break the flow |
+| "I'll trace it if the first fix fails" | The first fix sets the pattern; trace first |
 
 ## Quick Reference
 
@@ -212,7 +216,25 @@ workflow(async (step) => {
 | Refactor | Current flow, what changes, impact on callers |
 | Performance | Slow path, external calls, workflow steps |
 
-**Remember:** Understanding the flow makes the solution obvious. Guessing wastes time.
+## Red Flags - STOP and Trace First
 
+If you catch yourself:
+- Proposing a fix without a `file:line` for where the failure occurs
+- Referring to code by abstraction ("the handler", "some function") instead of a path
+- Adding retry/validation/caching without checking whether it already exists upstream
+- Changing a function's internals without knowing who calls it
+- Assuming a `Result` is `ok()` without tracing where `err()` can originate
 
+**ALL of these mean: STOP. Produce the diagram, then proceed.**
+
+## Verification
+
+Before implementing, confirm:
+
+- [ ] Entry point identified with `file:line`
+- [ ] Full `fn(args, deps)` call chain mapped with `file:line` references
+- [ ] `Result` propagation shown (`ok()` / `err()` paths and short-circuits)
+- [ ] Error/change location marked precisely
+- [ ] Diagram is concise (5-15 lines, relevant path only)
+- [ ] Understanding confirmed with the user before changing code
 

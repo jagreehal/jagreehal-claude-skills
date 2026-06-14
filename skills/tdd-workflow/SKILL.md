@@ -1,13 +1,28 @@
 ---
 name: tdd-workflow
-description: "Strict TDD state machine with Result types. 7-state workflow (PLANNING, RED, GREEN, REFACTOR, VERIFY, BLOCKED, VIOLATION). Every message MUST announce state. Integrates with fn(args, deps), vitest-mock-extended, and typed error handling."
-version: 2.1.0
+description: Drives implementation through a strict TDD state machine that forbids production code without a failing test first. Use when implementing any feature, fixing any bug, or changing behavior with test-first discipline; use when you need enforced red-green-refactor with Result types and dependency injection.
+version: 2.2.0
 libraries: ["vitest", "vitest-mock-extended"]
 ---
 
 # TDD Workflow
 
-Strict test-driven development with Result types, dependency injection, and state machine governance.
+## Overview
+
+Strict test-driven development governed by a 7-state machine (PLANNING, RED, GREEN, REFACTOR, VERIFY, BLOCKED, VIOLATION). You write a failing test first, watch it fail, implement the minimum to pass, watch it pass, then refactor and verify, announcing your current state on every message.
+
+**Why the state machine:** TDD fails in practice not because the loop is hard, but because it is easy to skip a step under pressure ("I'll add the test after"). Code written before its test is biased by the implementation: the test then verifies what the code does instead of what it should do. Announcing state on every message makes skips visible and self-correcting. This skill integrates with `fn(args, deps)`, `vitest-mock-extended` typed mocks, and typed Result error handling.
+
+## When to Use
+
+- Implementing any new feature, function, or behavior
+- Fixing any bug (write the reproduction test first)
+- Changing or extending existing behavior
+- Any work where tests must drive the design
+
+**When NOT to use:** Pure configuration, documentation, or static-content changes with no behavioral impact; throwaway exploration you intend to delete (then restart with TDD).
+
+**Related:** [writing-tests](../writing-tests/SKILL.md) governs the RED phase (outcome-based names, specific assertions). [testing-strategy](../testing-strategy/SKILL.md) places these tests in the pyramid. [fn-args-deps](../fn-args-deps/SKILL.md) and [result-types](../result-types/SKILL.md) shape the code under test. [debugging-methodology](../debugging-methodology/SKILL.md) covers bug reproduction before the RED phase.
 
 ## The Iron Law
 

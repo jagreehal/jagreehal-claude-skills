@@ -1,19 +1,27 @@
 ---
 name: git-worktrees
-description: "Use when starting feature work that needs isolation from current workspace. Creates isolated git worktrees with directory selection, safety verification, and baseline testing."
-version: 1.0.0
+description: Isolates feature work in a dedicated git worktree that shares the repository but lives in its own directory, with directory selection, gitignore safety checks, project setup, and baseline test verification. Use when starting feature work that needs isolation from the current workspace, before executing a multi-task implementation plan, when running parallel work on different branches, or for experimental work that might be discarded.
+version: 1.1.0
 ---
 
 # Git Worktrees
 
-Git worktrees create isolated workspaces sharing the same repository, allowing work on multiple branches simultaneously.
+## Overview
+
+Git worktrees create isolated workspaces that share the same repository while living in separate directories, letting you work on multiple branches simultaneously without switching or stashing. Each worktree has its own working directory and branch, so an agent can implement a feature, run an experiment, or execute a plan without disturbing the main checkout. If an experiment fails, delete the worktree. Nothing in the main workspace is touched, and nothing is lost until you explicitly merge the changes.
+
+This isolation is what makes safe parallel agent work possible: independent features run in independent directories with no risk of colliding edits.
 
 ## When to Use
 
-- MUST: When implementing features that need isolation
-- MUST: Before executing multi-task implementation plans
-- SHOULD: When parallel development on different features needed
-- MAY: For experimental work that might be discarded
+- Implementing a feature that needs isolation from the current workspace
+- Before executing a multi-task implementation plan
+- Running parallel development on different features at once
+- Experimental work that might be discarded
+
+**When NOT to use:** Quick edits on the current branch, or when the change is trivial enough that branch switching costs nothing. Don't add worktree overhead to a one-line fix.
+
+**Related:** A worktree is often spun up off a validated [design-exploration](../design-exploration/SKILL.md) design, and is the workspace where an [implementation-planning](../implementation-planning/SKILL.md) plan executes. Multiple worktrees enable [parallel-agent-dispatch](../parallel-agent-dispatch/SKILL.md); cleanup is handled by [branch-completion](../branch-completion/SKILL.md).
 
 ## Directory Selection Priority
 
@@ -32,7 +40,7 @@ ls -d worktrees 2>/dev/null      # Alternative
 grep -i "worktree.*director" CLAUDE.md 2>/dev/null
 ```
 
-**If preference specified:** Use it.
+**If a preference is specified:** Use it.
 
 ### 3. Ask User
 
@@ -47,22 +55,28 @@ Which would you prefer?
 
 ## Safety Verification
 
-### MUST: Verify Directory is Ignored
-
-For project-local directories:
+For project-local directories, verify the directory is git-ignored before creating anything inside it:
 
 ```bash
 git check-ignore -q .worktrees 2>/dev/null
 ```
 
 **If NOT ignored:**
-1. Add to .gitignore
+1. Add it to `.gitignore`
 2. Commit the change
 3. Then proceed
 
-**Why:** Prevents accidentally committing worktree contents.
+This prevents accidentally committing worktree contents into the repository.
 
 ## Creation Steps
+
+The whole procedure below (directory selection, gitignore safety, branch creation, setup, and baseline tests) is bundled as a deterministic script. Prefer it over reissuing the commands by hand:
+
+```bash
+scripts/create-worktree.sh <branch-name> [base-dir]
+```
+
+It exits non-zero if the target directory isn't git-ignored (exit 2) or baseline tests fail (exit 3), so it never proceeds past a broken baseline silently. Run the steps manually only when you need to deviate from the standard flow.
 
 ### Step 1: Detect Project Name
 
@@ -94,7 +108,7 @@ cd "$path"
 npm test  # or cargo test / pytest / go test ./...
 ```
 
-**If tests fail:** Report failures, ask whether to proceed.
+**If tests fail:** Report the failures and ask whether to proceed.
 **If tests pass:** Report ready.
 
 ### Step 5: Report Location
@@ -105,27 +119,18 @@ Tests passing (47 tests, 0 failures)
 Ready to implement <feature-name>
 ```
 
-## MUST/SHOULD/NEVER Rules
+## Rules
 
-### MUST
+| Rule | Detail |
+|------|--------|
+| Directory priority | existing `.worktrees/` > `worktrees/` > CLAUDE.md > ask |
+| Verify ignored | Project-local worktree dirs must be git-ignored first |
+| Baseline tests | Run them before starting work |
+| Report location | Always report the worktree path when done |
+| Setup | Auto-detect and run project setup |
+| Branch naming | Create the feature branch with a descriptive name |
 
-- MUST: Follow directory priority (existing > CLAUDE.md > ask)
-- MUST: Verify directory is ignored for project-local worktrees
-- MUST: Run baseline tests before starting work
-- MUST: Report worktree location when done
-
-### SHOULD
-
-- SHOULD: Auto-detect and run project setup
-- SHOULD: Create feature branch with descriptive name
-- SHOULD: Use `.worktrees/` over `worktrees/`
-
-### NEVER
-
-- NEVER: Create worktree without verifying it's ignored
-- NEVER: Skip baseline test verification
-- NEVER: Proceed with failing tests without asking
-- NEVER: Assume directory location when ambiguous
+**Never** create a worktree without verifying it's ignored, skip baseline test verification, proceed past failing tests without asking, or assume a directory location when it's ambiguous.
 
 ## Quick Reference
 
@@ -134,13 +139,13 @@ Ready to implement <feature-name>
 | `.worktrees/` exists | Use it (verify ignored) |
 | `worktrees/` exists | Use it (verify ignored) |
 | Both exist | Use `.worktrees/` |
-| Neither exists | Check CLAUDE.md → Ask user |
-| Directory not ignored | Add to .gitignore + commit |
+| Neither exists | Check CLAUDE.md → ask user |
+| Directory not ignored | Add to `.gitignore` + commit |
 | Baseline tests fail | Report failures + ask |
 
 ## Cleanup
 
-When work is complete, remove worktree:
+When work is complete, remove the worktree from the main repository:
 
 ```bash
 # From main repository
@@ -148,10 +153,20 @@ git worktree remove <worktree-path>
 git branch -d <feature-branch>  # if merged
 ```
 
-## Integration
+## Red Flags
 
-| Skill | Relationship |
-|-------|--------------|
-| `design-exploration` | May trigger worktree creation |
-| `implementation-planning` | Plans execute in worktree |
-| `branch-completion` | Handles worktree cleanup |
+- Creating a worktree inside a directory that isn't git-ignored
+- Starting work without running baseline tests
+- Proceeding past failing baseline tests without asking
+- Guessing the worktree location instead of following the priority order
+- Leaving stale worktrees and branches around after merge
+
+## Verification
+
+Before starting work in a new worktree, confirm:
+
+- [ ] The directory was chosen by the priority order (existing > CLAUDE.md > ask)
+- [ ] Project-local worktree directories are git-ignored
+- [ ] Project setup ran successfully
+- [ ] Baseline tests pass (or failures were reported and the human approved proceeding)
+- [ ] The worktree location was reported back

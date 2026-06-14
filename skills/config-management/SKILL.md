@@ -1,17 +1,30 @@
 ---
 name: config-management
-description: "Validate config at startup, secrets in memory only. Never read config during requests, never store secrets in env vars. Use node-env-resolver for multi-source config."
-version: 1.0.0
+description: Validates application configuration once at startup with Zod or node-env-resolver, injects it via deps, and keeps secrets in memory instead of environment variables. Use when loading env vars, building a config schema, wiring secret managers (AWS Secrets Manager, ephemeral credentials), deciding where config is read, adding secret scanning to CI, or testing code that depends on config.
+version: 1.1.0
 libraries: ["node-env-resolver", "zod"]
 ---
 
 # Config Management
 
-Validate once at startup, fail fast, never leak secrets.
+## Overview
 
-## Core Principle
+Configuration is a leading source of runtime errors: a missing variable or a string where a number belongs takes down a code path at 3 AM, far from where the mistake was made. Validate the entire config **once at startup** so a bad config fails the process immediately, with a clear error, before serving any traffic.
 
-Configuration is a potential source of runtime errors. Validate at startup so failures happen immediately, not at 3 AM when a code path finally executes.
+Two failure modes dominate. First, reading `process.env` deep inside request handlers: this re-parses on every call, scatters config logic, and hides misconfiguration until that path executes. Resolve once, then inject the typed config through `deps`. Second, treating environment variables as a safe home for secrets. `process.env` is visible to child processes, `/proc/self/environ`, and stray log lines. Load secrets into memory from a secret manager and keep them out of the environment entirely.
+
+## When to Use
+
+- Loading and validating environment variables at process startup
+- Defining a typed config schema (Zod or node-env-resolver validators)
+- Fetching secrets from AWS Secrets Manager or similar, with rotation
+- Deciding where config gets read (startup vs request time)
+- Adding secret scanning (TruffleHog, Gitleaks) to CI
+- Writing tests for code that depends on config
+
+**When NOT to use:** per-request runtime input. Validate that at the API boundary (see [`validation-boundary`](../validation-boundary/SKILL.md)). Feature flags evaluated dynamically are a separate concern from startup config.
+
+**Related:** [`validation-boundary`](../validation-boundary/SKILL.md) (Zod at boundaries), [`fn-args-deps`](../fn-args-deps/SKILL.md) (injecting config through deps), [`strict-typescript`](../strict-typescript/SKILL.md) (typing the resolved config), [`observability`](../observability/SKILL.md) (avoiding secrets in logs).
 
 ## Required Behaviors
 
@@ -157,7 +170,7 @@ If a credential leaks, automatic expiration limits the blast radius.
 
 ### 3b. Secret Scanning in CI
 
-Runtime policies protect production, but what about the `.env` file that should never exist? Run secret scanning in CI:
+Runtime policies protect production, but a committed `.env` file still leaks secrets. Run secret scanning in CI:
 
 ```yaml
 # .github/workflows/security.yml
@@ -324,3 +337,32 @@ const result = await getUser({ userId: '123' }, deps);
 | Secrets in memory | SecretManager.get(), not process.env |
 | Fail fast | No defaults for required config |
 | Type safety | z.infer<typeof Schema> |
+
+## Common Rationalizations
+
+| Rationalization | Reality |
+|---|---|
+| "I'll read `process.env.X` right where I need it" | That re-parses on every call and hides the missing variable until that path runs. Resolve once, inject via deps. |
+| "A default of `3000` / `localhost` is convenient" | Defaults mask misconfiguration in production. Required config should fail loudly when absent. |
+| "Secrets in env vars are standard practice" | Env vars leak to child processes, `/proc/self/environ`, and logs. Load secrets into memory from a secret manager. |
+| "We deleted the `.env` from the repo, so we're fine" | It still lives in git history. Run TruffleHog/Gitleaks over full history in CI. |
+| "Mocking config in tests needs `vi.mock`" | Inject a resolver or a `Pick<Config, ...>` object instead: same DI pattern, no module mocking. |
+
+## Red Flags
+
+- `process.env` accessed anywhere outside the startup config module
+- `process.env.X || 'default'` for required values
+- Secrets read from `process.env` instead of a secret manager loaded into memory
+- Config parsed lazily or per-request rather than once at boot
+- Long-lived static credentials where rotating/ephemeral ones are available
+- No secret scanning step in CI
+
+## Verification
+
+- [ ] Entire config is validated once at startup and the process exits on failure
+- [ ] No required value has a fallback default
+- [ ] Config is injected through `deps`, never re-read from `process.env` mid-request
+- [ ] Secrets come from a secret manager into memory with `preventProcessEnvWrite`
+- [ ] Config type is derived via `z.infer<typeof Schema>` (or the resolver's inferred type)
+- [ ] Tests inject mock resolvers / config objects instead of mutating env
+- [ ] CI runs secret scanning over full git history

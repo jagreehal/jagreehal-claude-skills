@@ -1,12 +1,28 @@
 ---
 name: verification-before-completion
-description: "Use when about to claim work is complete, fixed, or passing. Requires running verification commands and confirming output before making any success claims. Evidence before assertions, always."
-version: 1.0.0
+description: Requires running the relevant verification command and reading its fresh output before claiming any work is complete, fixed, or passing. Use when about to say something passes, builds, is done, or is fixed; before committing, pushing, or opening a PR; and before trusting a sub-agent's success report. Evidence before assertions, always.
+version: 1.1.0
 ---
 
 # Verification Before Completion
 
-Claiming work is complete without verification is dishonesty, not efficiency.
+## Overview
+
+Claiming work is complete without verification is dishonesty, not efficiency. An agent's confidence is not evidence. Only the fresh output of a verification command is. This skill installs a hard gate before every success claim: identify the command that proves the claim, run it in full this turn, read the actual output and exit code, then state the result with that evidence attached. The gate exists because the cost of a false "all tests pass" is paid downstream, in a broken CI run, a reverted commit, or a user who trusted a claim that was never checked. Past runs, partial checks, and "should work now" prove nothing.
+
+## When to Use
+
+- About to claim tests pass, the build succeeds, the linter is clean, or types check
+- About to claim a bug is fixed or a requirement is met
+- Before committing, pushing, or opening a pull request
+- Before trusting a sub-agent's or tool's report of success
+- After any code change, before re-asserting a previously verified status
+
+**When NOT to use:** There is no exception. Every completion claim needs evidence. There is no "trivial enough to skip" case.
+
+**Related:** [tdd-workflow](../tdd-workflow/SKILL.md), [debugging-methodology](../debugging-methodology/SKILL.md), [testing-strategy](../testing-strategy/SKILL.md), [session-continuity](../session-continuity/SKILL.md).
+
+For multi-step and multi-agent coordination rules, see [`references/orchestration-patterns.md`](../../references/orchestration-patterns.md).
 
 ## The Iron Law
 
@@ -131,6 +147,18 @@ For regression tests:
 
 | Skill | Relationship |
 |-------|--------------|
-| `tdd-workflow` | TDD requires verification at each state |
-| `debugging-methodology` | Verify fix works before claiming fixed |
-| `testing-strategy` | Verification is final testing gate |
+| [tdd-workflow](../tdd-workflow/SKILL.md) | TDD requires verification at each red-green state |
+| [debugging-methodology](../debugging-methodology/SKILL.md) | Verify the fix works before claiming fixed |
+| [testing-strategy](../testing-strategy/SKILL.md) | Verification is the final testing gate |
+| [session-continuity](../session-continuity/SKILL.md) | The VERIFY state enforces this gate before COMPLETE |
+
+## Verification
+
+Before making any completion claim, confirm:
+
+- [ ] Identified the exact command that proves the claim
+- [ ] Ran that command in full, this turn (not a previous run)
+- [ ] Read the actual output and checked the exit code or failure count
+- [ ] The output confirms the claim being made
+- [ ] No "should", "probably", or "seems to" language used for a verified status
+- [ ] Sub-agent reports were independently verified against the VCS diff or fresh output
