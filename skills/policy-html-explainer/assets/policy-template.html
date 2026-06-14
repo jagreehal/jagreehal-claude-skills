@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<!--
+  policy-html-explainer template.
+
+  HOW TO USE
+  1. Copy this file to <policy-slug>-explained.html.
+  2. Replace every {{PLACEHOLDER}} and the sample sections below with the real policy content.
+  3. Keep the structural classes — the design system depends on them.
+  4. Verbatim policy goes ONLY inside <blockquote class="policy">. Never reword text in there.
+  5. Delete diagram blocks a theme does not need. Do not invent numbers to fill one.
+  The page is self-contained: no external CSS, JS, fonts, or images. It opens offline and prints.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{POLICY_NAME}} — Explained</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --ink: #1c1b19;
+    --muted: #5f5b54;
+    --line: #e4e1da;
+    --accent: #2f5d50;        /* calm green — used for policy + actions */
+    --accent-soft: #e8f0ec;
+    --warn: #8a5a00;          /* exceptions / review flags */
+    --warn-soft: #fbf1dd;
+    --danger: #9a2f2f;        /* don't / prohibited */
+    --danger-soft: #f6e4e2;
+    --ok: #2f6d3a;            /* do / allowed */
+    --ok-soft: #e3f0e4;
+    --radius: 10px;
+    --maxw: 760px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #161513; --surface: #211f1c; --ink: #ece9e3; --muted: #a7a298;
+      --line: #36332e; --accent: #7fc0ad; --accent-soft: #1d2a26;
+      --warn: #e0a84e; --warn-soft: #2a2317; --danger: #e08c86; --danger-soft: #2c1d1c;
+      --ok: #82c08c; --ok-soft: #1c2a1e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--font); font-size: 17px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .skip {
+    position: absolute; left: -999px; top: 0; background: var(--accent);
+    color: #fff; padding: .6rem 1rem; border-radius: 0 0 var(--radius) 0; z-index: 10;
+  }
+  .skip:focus { left: 0; }
+
+  .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 1.25rem; }
+
+  header.masthead {
+    padding: 3rem 0 1.5rem; border-bottom: 1px solid var(--line);
+  }
+  .eyebrow {
+    font-size: .78rem; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600; margin: 0 0 .5rem;
+  }
+  h1 { font-size: 2.1rem; line-height: 1.15; margin: 0 0 .75rem; letter-spacing: -.01em; }
+  .meta { display: flex; flex-wrap: wrap; gap: .5rem .9rem; color: var(--muted); font-size: .92rem; margin-top: .5rem; }
+  .meta span { display: inline-flex; align-items: center; gap: .35rem; }
+
+  /* Table of contents */
+  nav.toc {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 1rem 1.25rem; margin: 1.75rem 0;
+  }
+  nav.toc h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 .6rem; }
+  nav.toc ol { margin: 0; padding-left: 1.2rem; }
+  nav.toc li { margin: .25rem 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover, nav.toc a:focus { color: var(--accent); text-decoration: underline; }
+
+  /* Executive summary */
+  .summary {
+    background: var(--accent-soft); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 1.25rem 1.5rem; margin: 1.75rem 0;
+  }
+  .summary h2 { margin-top: 0; }
+  .summary ul { margin: .5rem 0 0; padding-left: 1.2rem; }
+  .summary li { margin: .4rem 0; }
+
+  section.theme { padding: 2.25rem 0; border-top: 1px solid var(--line); }
+  section.theme h2 { font-size: 1.5rem; margin: 0 0 1.25rem; letter-spacing: -.01em; }
+
+  /* The five blocks */
+  .block { margin: 1.1rem 0; }
+  .block .label {
+    font-size: .72rem; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--muted); font-weight: 700; margin: 0 0 .3rem; display: block;
+  }
+  .scenario { font-style: italic; color: var(--ink); }
+  .scenario::before { content: "Imagine "; font-style: normal; font-weight: 600; }
+
+  /* Verbatim policy — must read as quoted, never as paraphrase */
+  blockquote.policy {
+    margin: .4rem 0; padding: .9rem 1.1rem; background: var(--surface);
+    border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0; font-family: var(--mono);
+    font-size: .95rem; line-height: 1.55; color: var(--ink);
+  }
+  blockquote.policy .ref { display: block; margin-top: .5rem; font-family: var(--font); font-size: .82rem; color: var(--muted); }
+  .modal { font-weight: 700; color: var(--accent); font-family: var(--font); }
+
+  .why {
+    border-left: 3px solid var(--line); padding-left: 1rem; color: var(--muted);
+  }
+
+  /* Callouts */
+  .callout { border-radius: var(--radius); padding: 1rem 1.25rem; margin: 1.25rem 0; border: 1px solid var(--line); }
+  .callout h3 { margin: 0 0 .4rem; font-size: 1rem; }
+  .callout.exception { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 30%, var(--line)); }
+  .callout.review { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 30%, var(--line)); }
+  .callout.review h3::before { content: "⚑ "; }
+  .callout.exception h3::before { content: "↪ "; }
+
+  /* ---- Diagrams ---- */
+  figure.diagram { margin: 1.5rem 0; }
+  figure.diagram figcaption { font-size: .85rem; color: var(--muted); margin-top: .5rem; }
+
+  /* Decision tree (CSS) */
+  .tree { display: flex; flex-direction: column; gap: .55rem; }
+  .tree .node, .tree .leaf {
+    border: 1px solid var(--line); border-radius: var(--radius); padding: .6rem .9rem; background: var(--surface);
+  }
+  .tree .node { font-weight: 600; }
+  .tree .branch { display: flex; gap: .6rem; margin-left: 1.1rem; }
+  .tree .branch > .leaf { flex: 1; }
+  .tree .leaf.yes { border-left: 4px solid var(--ok); }
+  .tree .leaf.no { border-left: 4px solid var(--danger); }
+  .tree .leaf .tag { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: block; }
+
+  /* Threshold ladder */
+  .ladder { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+  .ladder .rung { display: grid; grid-template-columns: 8rem 1fr; gap: 1rem; padding: .7rem 1rem; border-top: 1px solid var(--line); }
+  .ladder .rung:first-child { border-top: 0; }
+  .ladder .rung .level { font-weight: 700; font-family: var(--mono); color: var(--accent); }
+
+  /* Do / Don't cards */
+  .dodont { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .dodont .card { border-radius: var(--radius); padding: 1rem; border: 1px solid var(--line); }
+  .dodont .do { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 30%, var(--line)); }
+  .dodont .dont { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 30%, var(--line)); }
+  .dodont h4 { margin: 0 0 .5rem; font-size: .95rem; }
+  .dodont .do h4::before { content: "✓ "; color: var(--ok); }
+  .dodont .dont h4::before { content: "✕ "; color: var(--danger); }
+  .dodont ul { margin: 0; padding-left: 1.1rem; }
+
+  /* Timeline */
+  .timeline { border-left: 2px solid var(--accent); margin-left: .5rem; padding-left: 1.25rem; }
+  .timeline .step { position: relative; margin: 0 0 1rem; }
+  .timeline .step::before { content: ""; position: absolute; left: -1.6rem; top: .35rem; width: .65rem; height: .65rem; background: var(--accent); border-radius: 50%; }
+  .timeline .when { font-family: var(--mono); font-weight: 700; color: var(--accent); font-size: .9rem; }
+
+  /* Understanding checklist */
+  .understand { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; margin: 2.5rem 0; }
+  .understand h2 { margin-top: 0; }
+  .understand p.lead { color: var(--muted); margin-top: 0; }
+  .understand label { display: flex; gap: .7rem; align-items: flex-start; padding: .55rem 0; border-top: 1px solid var(--line); cursor: pointer; }
+  .understand label:first-of-type { border-top: 0; }
+  .understand input { margin-top: .35rem; width: 1.1rem; height: 1.1rem; accent-color: var(--accent); flex-shrink: 0; }
+  .understand .progress { margin-top: 1rem; font-size: .9rem; color: var(--muted); }
+
+  footer { color: var(--muted); font-size: .85rem; padding: 2.5rem 0 4rem; border-top: 1px solid var(--line); }
+  .ask { background: var(--accent-soft); border-radius: var(--radius); padding: 1rem 1.25rem; margin: 1.5rem 0; }
+
+  a { color: var(--accent); }
+
+  @media (max-width: 560px) {
+    .dodont { grid-template-columns: 1fr; }
+    .tree .branch { flex-direction: column; }
+    .ladder .rung { grid-template-columns: 1fr; gap: .2rem; }
+  }
+
+  /* Print: strip chrome, keep content readable on paper */
+  @media print {
+    :root { --bg: #fff; --surface: #fff; --accent-soft: #fff; }
+    body { font-size: 11pt; color: #000; }
+    nav.toc, .skip, .understand .progress { display: none; }
+    .understand input { -webkit-appearance: none; appearance: none; border: 1.5px solid #000; }
+    section.theme, .summary, figure.diagram { break-inside: avoid; }
+    a { color: #000; text-decoration: none; }
+    .ask { border: 1px solid #000; }
+  }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Policy, explained</p>
+    <h1>{{POLICY_NAME}}</h1>
+    <div class="meta">
+      <span>👥 For: {{AUDIENCE}}</span>
+      <span>📄 Source: {{SOURCE_REF}}</span>
+      <span>⏱ ~{{READING_MINUTES}} min read</span>
+      <span>🗓 Version {{POLICY_VERSION}}</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <nav class="toc" aria-label="Contents">
+    <h2>On this page</h2>
+    <ol>
+      <li><a href="#summary">The short version</a></li>
+      <li><a href="#theme-1">1. Reporting a suspected breach</a></li>
+      <li><a href="#theme-2">2. Using personal devices</a></li>
+      <li><a href="#exceptions">Exceptions &amp; approvals</a></li>
+      <li><a href="#review">Needs human review</a></li>
+      <li><a href="#understand">Check your understanding</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+
+    <!-- Executive summary: long policies only. Mandatory language intact, thresholds unchanged. -->
+    <section class="summary" id="summary" aria-labelledby="summary-h">
+      <h2 id="summary-h">The short version</h2>
+      <p>If you only read one box, read this. Each point links to the full explanation below.</p>
+      <ul>
+        <li>You <strong>must</strong> report a suspected data breach within <strong>24 hours</strong> of discovering it (<a href="#theme-1">§1</a>).</li>
+        <li>You <strong>must not</strong> use a personal device for customer data — the <em>only</em> exception is a device IT has enrolled in MDM (<a href="#theme-2">§2</a>).</li>
+        <li>Late breach reports have <strong>no</strong> stated exception. If you've missed the window, report it anyway and flag the delay.</li>
+      </ul>
+    </section>
+
+    <!-- ============ THEME 1 — has a deadline → timeline diagram ============ -->
+    <section class="theme" id="theme-1">
+      <h2>1. Reporting a suspected breach</h2>
+
+      <div class="block scenario">
+        you email a spreadsheet of customer details to the wrong supplier. You spot it that
+        afternoon and you're not sure whether anyone has opened it.
+      </div>
+
+      <div class="block">
+        <span class="label">What this means</span>
+        <p>You <strong>must not</strong> wait to see whether it becomes a bigger problem. Customer
+        data may have been exposed, so the Information Security team needs to know quickly.</p>
+      </div>
+
+      <div class="block">
+        <span class="label">The actual policy — word for word</span>
+        <blockquote class="policy">
+          Employees <span class="modal">must</span> report any suspected data breach to the
+          Information Security team within <span class="modal">24 hours</span> of discovery.
+          <span class="ref">Source: §4.1, Information Security Policy</span>
+        </blockquote>
+      </div>
+
+      <div class="block">
+        <span class="label">What you should do</span>
+        <p>Report it as soon as you realise. Include what was sent, who received it, when it
+        happened, and whether you've tried to recall or delete the message.</p>
+      </div>
+
+      <figure class="diagram">
+        <div class="timeline">
+          <div class="step"><span class="when">T+0</span> — you discover the mistake. The 24-hour clock starts now, not when it's confirmed.</div>
+          <div class="step"><span class="when">Within 24h</span> — report to Information Security with the details above.</div>
+          <div class="step"><span class="when">After report</span> — IT assesses risk and meets any legal reporting duties.</div>
+        </div>
+        <figcaption>The clock starts at discovery, not at confirmation.</figcaption>
+      </figure>
+
+      <div class="block why">
+        <span class="label">Why it exists</span>
+        Fast reporting gives the organisation time to contain the issue, assess the risk, and meet
+        legal or regulatory reporting deadlines that it could otherwise miss.
+      </div>
+    </section>
+
+    <!-- ============ THEME 2 — a decision with an exception → tree + do/don't ============ -->
+    <section class="theme" id="theme-2">
+      <h2>2. Using personal devices for customer data</h2>
+
+      <div class="block scenario">
+        you're working from home and it's quicker to pull up a customer record on your own phone
+        than to open the laptop. Is that allowed?
+      </div>
+
+      <div class="block">
+        <span class="label">What this means</span>
+        <p>As a rule, no. Personal devices are off-limits for customer data. There is one narrow
+        exception, and it is decided by IT — not by you.</p>
+      </div>
+
+      <div class="block">
+        <span class="label">The actual policy — word for word</span>
+        <blockquote class="policy">
+          Personal devices <span class="modal">must not</span> be used to access customer data,
+          except where IT has enrolled the device in mobile device management (MDM).
+          <span class="ref">Source: §6.3, Acceptable Use Policy</span>
+        </blockquote>
+      </div>
+
+      <figure class="diagram">
+        <div class="tree">
+          <div class="node">Has IT enrolled this device in MDM?</div>
+          <div class="branch">
+            <div class="leaf yes"><span class="tag">Yes</span> You may access customer data on it.</div>
+            <div class="leaf no"><span class="tag">No</span> You <strong>must not</strong> — use a managed device instead.</div>
+          </div>
+        </div>
+        <figcaption>"Reasonably secure in my own opinion" is not a branch on this tree. Only IT enrolment counts.</figcaption>
+      </figure>
+
+      <figure class="diagram">
+        <div class="dodont">
+          <div class="card do">
+            <h4>Do</h4>
+            <ul>
+              <li>Use a company laptop or an IT-enrolled (MDM) device.</li>
+              <li>Ask IT to enrol a device before using it for customer data.</li>
+            </ul>
+          </div>
+          <div class="card dont">
+            <h4>Don't</h4>
+            <ul>
+              <li>Use a personal phone or tablet that IT hasn't enrolled.</li>
+              <li>Decide for yourself that a device is "secure enough".</li>
+            </ul>
+          </div>
+        </div>
+      </figure>
+
+      <div class="block why">
+        <span class="label">Why it exists</span>
+        MDM lets the organisation wipe a lost device and enforce encryption. A personal device IT
+        can't manage is a route for customer data to leak if it's lost or sold.
+      </div>
+    </section>
+
+    <!-- ============ Example of a threshold ladder (use when a rule has tiers) ============ -->
+    <!--
+    <figure class="diagram">
+      <div class="ladder">
+        <div class="rung"><span class="level">Over £25</span><span>Receipt <strong>required</strong>.</span></div>
+        <div class="rung"><span class="level">Under £25</span><span>Receipt <strong>may</strong> be omitted; description <strong>should</strong> be included.</span></div>
+      </div>
+      <figcaption>Keep every threshold exactly as the policy states it.</figcaption>
+    </figure>
+    -->
+
+    <!-- ============ Exceptions & approvals ============ -->
+    <section class="theme" id="exceptions">
+      <h2>Exceptions &amp; approvals</h2>
+      <div class="callout exception">
+        <h3>Personal device exception</h3>
+        <p>A personal device <strong>may</strong> be used for customer data <em>only</em> once IT
+        has enrolled it in MDM (§6.3). This is the single stated exception — it is not a general
+        permission to use personal devices.</p>
+      </div>
+    </section>
+
+    <!-- ============ Needs human review — flag, don't resolve ============ -->
+    <section class="theme" id="review">
+      <h2>Needs human review</h2>
+      <div class="callout review">
+        <h3>What counts as a "suspected" breach</h3>
+        <p>The policy is not explicit on how strong a suspicion must be before the 24-hour clock
+        starts. If you're unsure, treat it as in-scope and check with Information Security — don't
+        wait for certainty.</p>
+      </div>
+    </section>
+
+    <!-- ============ Understanding checklist — comprehension, not attendance ============ -->
+    <section class="understand" id="understand" aria-labelledby="understand-h">
+      <h2 id="understand-h">Check your understanding</h2>
+      <p class="lead">Tick each one only if it's actually true for you. These are about understanding
+      the rules above — not just confirming you opened the page.</p>
+
+      <label><input type="checkbox"> I know I have <strong>24 hours</strong> from <em>discovery</em> to report a suspected breach, and the clock doesn't wait for confirmation.</label>
+      <label><input type="checkbox"> I know I <strong>must not</strong> use a personal device for customer data unless IT has enrolled it in MDM.</label>
+      <label><input type="checkbox"> I know that deciding a device is "secure enough" myself does <strong>not</strong> count as an exception.</label>
+      <label><input type="checkbox"> I know who to contact (Information Security) and what details to include when I report.</label>
+
+      <p class="progress" aria-live="polite" id="progress">0 of 4 understood</p>
+    </section>
+
+    <div class="ask">
+      <strong>Not sure about something?</strong> This page explains the policy, but it can't answer
+      every situation. Ask {{POLICY_OWNER}} before acting if your case isn't covered here — that's
+      expected, not a failure.
+    </div>
+
+  </main>
+
+  <footer>
+    <p>This is a plain-English explanation of <strong>{{POLICY_NAME}}</strong> ({{SOURCE_REF}}). Where
+    this page and the official policy differ, the official policy wins. Quoted blocks are verbatim;
+    everything else is explanation.</p>
+  </footer>
+
+</div>
+
+<!-- Optional, self-contained: live count + per-session memory. Page works fully without JS. -->
+<script>
+  (function () {
+    var boxes = Array.prototype.slice.call(document.querySelectorAll('.understand input[type=checkbox]'));
+    var out = document.getElementById('progress');
+    function update() {
+      var done = boxes.filter(function (b) { return b.checked; }).length;
+      if (out) out.textContent = done + ' of ' + boxes.length + ' understood';
+    }
+    boxes.forEach(function (b) { b.addEventListener('change', update); });
+    update();
+  })();
+</script>
+</body>
+</html>

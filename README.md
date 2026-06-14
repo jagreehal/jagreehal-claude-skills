@@ -28,7 +28,7 @@ This marketplace contains **10 plugins**. Install only what you need.
 | `communication-behavior` | 6 | Claude style: critical peer, concise output, research-first |
 | `workflow-productivity` | 10 | Session management, verification, git worktrees, parallel agents |
 | `frontend-react` | 5 | React patterns, testable+storybookable components, Storybook, UI design, browser automation |
-| `documentation-architecture` | 7 | Documentation standards, ADRs, data visualization, policy explanations |
+| `documentation-architecture` | 8 | Documentation standards, ADRs, data visualization, policy explanations |
 | `debugging-analysis` | 2 | Evidence-based debugging, code flow analysis |
 | `skill-authoring` | 1 | Guide for creating custom skills |
 | `code-review` | - | Auto code review on file modifications (hooks) |
@@ -146,7 +146,7 @@ Frontend development with React and modern tooling.
 | `ui-design-principles` | Design systems, implementation-ready interfaces |
 | `agent-browser` | Browser automation for web testing, form filling, screenshots |
 
-### documentation-architecture (7 skills)
+### documentation-architecture (8 skills)
 
 Documentation standards and system architecture decisions.
 
@@ -159,6 +159,7 @@ Documentation standards and system architecture decisions.
 | `design-principles` | Fail-fast, no `any`, domain naming, YAGNI |
 | `spine-framework` | SPINE structure for technical articles |
 | `policy-story-explainer` | Story-led policy rewrites that preserve meaning |
+| `policy-html-explainer` | Self-contained HTML policy pages with diagrams and an understanding checklist |
 
 ### debugging-analysis (2 skills)
 
